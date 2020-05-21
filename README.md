@@ -5,6 +5,7 @@ Files (all must be in the same directory):
   safeguard-cmdlet-testing.ps1 - "the harness".  main testing harness to be invoked
                                  from powershell commandline. Can also be run from
                                  VisualStudio Code or Powershell ISE.
+  harness-data.ps1             - home for "global" variables
   cmdlet-tests-*.ps1           - blocks of tests. only meant to be dot-source invoked 
                                  from harness. Do not invoke these by hand.
   license-123-456-000.dlv      - perpetual SPP license for testing. Use this one or
@@ -16,7 +17,7 @@ Files (all must be in the same directory):
 1) make sure you have safeguard powershell environment installed. See
    https://github.com/OneIdentity/safeguard-ps for instructions.
 
-2) edit safeguard-cmdlet-testing.ps1 and change variable values at the top of
+2) edit safeguard-cmdlet-testing.ps1 & harness-data.ps1 and change variable values at the top of
    the script to reflect "your" environment. Hopefully names and comments are
    enough to go on. Save.
 
