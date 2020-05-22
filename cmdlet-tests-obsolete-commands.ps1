@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName = "Running Obsolete Commands"
+$blockInfo = testBlockHeader "begin" $TestBlockName 
 # ===== Covered Commands =====
 # Add-SafeguardSessionSshAlgorithm
 # Get-SafeguardSessionCertificate
@@ -18,7 +19,6 @@ $TestBlockName = "Running Obsolete Commands"
 # Reset-SafeguardSessionModule
 # Set-SafeguardSessionSshAlgorithms
 #
-$blockInfo = testBlockHeader "begin" $TestBlockName 
 
 # All of the following commands are *expected* to be obsolete and should only spit out
 # a Warning (or 2) about that. If any other error comes out we'll squawk

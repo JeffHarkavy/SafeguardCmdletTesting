@@ -6,14 +6,6 @@
 }
 $TestBlockName ="Running Miscellaneous Tests"
 $blockInfo = testBlockHeader "begin" $TestBlockName
-# TODO - stubbed code
-# would not object to breaking these down further, but until then ...
-#Enable-SafeguardBmcConfiguration - !$isVm
-#Set-SafeguardBmcAdminPassword - !$isVm
-#Repair-SafeguardSessionModule
-#Set-SafeguardTime
-#Test-SafeguardAuditLogArchive - !$isLTS
-
 # === COVERED COMMANDS ===
 # Edit-SafeguardArchiveServer
 # Get-SafeguardApplianceName
@@ -37,6 +29,13 @@ $blockInfo = testBlockHeader "begin" $TestBlockName
 # Test-SafeguardArchiveServer
 # Uninstall-SafeguardLicense
 # Update-SafeguardAccessToken
+
+# TODO - stubbed code
+#Enable-SafeguardBmcConfiguration - !$isVm
+#Set-SafeguardBmcAdminPassword - !$isVm
+#Repair-SafeguardSessionModule
+#Set-SafeguardTime
+#Test-SafeguardAuditLogArchive - !$isLTS
 
 try {
    $output = Invoke-SafeguardMethod Core POST ReasonCodes -Body @{ Name = "RN12345"; Description = "Routine maintenance." }

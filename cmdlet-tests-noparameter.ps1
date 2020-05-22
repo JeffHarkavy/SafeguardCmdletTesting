@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName = "Running 'no parameter' type commands"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 
 # So this is really no-parameter ish commands. Some take a minimal parameter just to get to run
 # but they're all just simple commands that can be run w/o any other data setup.
@@ -84,7 +85,6 @@ $commands = @{
    FindSafeguardEvent =                             @{cmdName = 'Find-SafeguardEvent'; onLTS=$false; cmd = "Find-SafeguardEvent req"; pipe = "format-table";};
 }
 
-$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    foreach ($t in ($commands.GetEnumerator() | Sort {$_.Key})) {
       if ($null -ne $t.Value.onVm -and $t.Value.onVm -ne $isVm) {

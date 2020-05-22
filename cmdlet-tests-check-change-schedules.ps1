@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName ="Running Check and Change Schedule Creation Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # ===== Covered Commands =====
 # Copy-SafeguardPasswordChangeSchedule
 # Copy-SafeguardPasswordCheckSchedule
@@ -18,7 +19,6 @@ $TestBlockName ="Running Check and Change Schedule Creation Tests"
 # Rename-SafeguardPasswordChangeSchedule
 # Rename-SafeguardPasswordCheckSchedule
 #
-$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $changeScheduleName = "Change Schedule #1"
    $checkScheduleName = "Check Schedule #1"

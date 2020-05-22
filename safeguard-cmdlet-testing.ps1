@@ -6,9 +6,11 @@ $collectedErrors = [System.Collections.ArrayList]@()
 
 # flags to run / not run a given block of tests
 # add to this and create cmdlet-tests files as functionality gets added
+# Default these all to "N" and cmdline processing will turn things on/off
+# based on the list of tests passed in.
 $Tests = @{
    CheckHelp =             @{Seq=1;  runTest = "N"; fileName = "cmdlet-tests-help.ps1";};
-   NoParameter =           @{Seq=2;  runTest = "Y"; fileName = "cmdlet-tests-noparameter.ps1";};
+   NoParameter =           @{Seq=2;  runTest = "N"; fileName = "cmdlet-tests-noparameter.ps1";};
    Users =                 @{Seq=3;  runTest = "N"; fileName = "cmdlet-tests-users.ps1";};
    Groups =                @{Seq=4;  runTest = "N"; fileName = "cmdlet-tests-groups.ps1";};
    AssetsAndAccounts =     @{Seq=5;  runTest = "N"; fileName = "cmdlet-tests-assets-and-accounts.ps1";};
@@ -43,6 +45,8 @@ $resultCounts = @{
 #  Actual Start of Script logic
 #
 # ========================================================================
+
+# Process the command line and either show help or set the list of tests to run
 if ($allParameters -contains "help" -or $allParameters -contains "?") {
    showHelp
 } elseif ($allParameters.Length -eq 0 -or $allParameters -contains "all") {
@@ -50,9 +54,6 @@ if ($allParameters -contains "help" -or $allParameters -contains "?") {
       $t.Value.runTest = "Y"
    }
 } else {
-   foreach ($t in $Tests.GetEnumerator()) {
-      $t.Value.runTest = "N"
-   }
    foreach ($p in $allParameters) {
       if ($Tests.Keys -contains $p) {
          $Tests[$p].runTest = "Y"
@@ -66,7 +67,7 @@ if ($allParameters -contains "help" -or $allParameters -contains "?") {
    }
 }
 
-write-host "Running the following tests"
+write-host "Running the following tests (in order)"
 foreach ($t in ($Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"} | Sort {$_.Value.Seq})) {
    write-host "   $($t.Key)"
 }
@@ -83,7 +84,7 @@ try {
    $sgVersion = Get-SafeguardVersion
    $sgVersion | format-table
    # TODO Make sure to add any other known "vm" types
-   $isVm = $sgVersion.BuildPlatform -match "hyperv" -or $sgVersion.BuildPlatform -match "vmware"
+   $isVm = @('vmware','hyperv') -contains $sgVersion.BuildPlatform
    $isLTS = $sgVersion.Minor -eq "0"
 
    writeCallHeader "Test-SafeguardVersion - minimum 6.0"

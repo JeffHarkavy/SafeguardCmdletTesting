@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName ="Running New Schedule Creation Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # ===== Covered Commands =====
 # New-SafeguardSchedule
 # New-SafeguardScheduleDaily
@@ -12,7 +13,6 @@ $TestBlockName ="Running New Schedule Creation Tests"
 # New-SafeguardScheduleMonthlyByDayOfWeek
 # New-SafeguardScheduleWeekly
 #
-$blockInfo = testBlockHeader "begin" $TestBlockName
 # This is just to test schedule creation calls - not assigning them to anything
 try {
    $schedPlain = New-SafeguardSchedule -MonthsByDayOfWeek -ScheduleInterval 6 -WeekOfMonth Last -DayOfWeekOfMonth Saturday -StartHour 1 -StartMinute 30 -TimeZone "Eastern Standard Time"

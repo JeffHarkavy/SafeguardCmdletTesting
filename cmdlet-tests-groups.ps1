@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName ="Running Groups Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # ===== Covered Commands =====
 # Add-SafeguardUserGroupMember
 # Edit-SafeguardUserGroup
@@ -22,7 +23,6 @@ $TestBlockName ="Running Groups Tests"
 #
 # n.b. - account/asset group member tests in separate file
 #
-$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $groupname = $userGroupName
    try {

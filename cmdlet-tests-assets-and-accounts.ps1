@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName ="Running Assets, Accounts, and Groups Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # ===== Covered Commands =====
 # Add-SafeguardAccountGroupMember
 # Add-SafeguardAssetGroupMember
@@ -24,7 +25,6 @@ $TestBlockName ="Running Assets, Accounts, and Groups Tests"
 # Remove-SafeguardAssetAccount
 # Remove-SafeguardAssetGroupMember
 # 
-$blockInfo = testBlockHeader "begin" $TestBlockName
 # TODO - stubbed code
 #Invoke-SafeguardAssetAccountPasswordChange
 #Invoke-SafeguardAssetSshHostKeyDiscovery

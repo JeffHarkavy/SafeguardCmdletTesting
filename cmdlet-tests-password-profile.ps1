@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName = "Running Password Profile Creation Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # ===== Covered Commands =====
 # Copy-SafeguardPasswordProfile
 # Edit-SafeguardPasswordProfile
@@ -17,7 +18,6 @@ $TestBlockName = "Running Password Profile Creation Tests"
 # Remove-SafeguardPasswordProfile
 # Rename-SafeguardPasswordProfile
 #
-$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $pwdProfileName = "New Password Profile"
    $copyPwdProfileName = "Copy New Password Profile"

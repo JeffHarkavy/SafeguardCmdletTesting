@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName = "Running Account Password Rules Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # ===== Covered Commands =====
 # Copy-SafeguardAccountPasswordRule
 # Edit-SafeguardAccountPasswordRule
@@ -12,7 +13,6 @@ $TestBlockName = "Running Account Password Rules Tests"
 # Remove-SafeguardAccountPasswordRule
 # Rename-SafeguardAccountPasswordRule
 #
-$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $pwdRuleName = "ps.NewPwdRule_001"
    $copyPwdRuleName = "Copy $pwdRuleName"

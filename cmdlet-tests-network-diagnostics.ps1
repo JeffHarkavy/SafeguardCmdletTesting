@@ -5,6 +5,7 @@
    exit
 }
 $TestBlockName ="Running Networking Diagnostics Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # ===== Covered Commands =====
 # Invoke-SafeguardClusterPing
 # Invoke-SafeguardClusterThroughput
@@ -15,7 +16,6 @@ $TestBlockName ="Running Networking Diagnostics Tests"
 # Invoke-SafeguardSessionsTelnet
 # Invoke-SafeguardTelnet
 #
-$blockInfo = testBlockHeader "begin" $TestBlockName
 # TODO - stubbed code
 # Some of these need a cluster or SPS - don't have one right now
 try {
