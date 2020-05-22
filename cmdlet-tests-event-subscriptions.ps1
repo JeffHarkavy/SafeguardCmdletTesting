@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName ="Running Event Subscription Creation Tests"
 # ===== Covered Commands =====
 # Edit-SafeguardEventSubscription
 # Find-SafeguardAsset
@@ -14,7 +15,7 @@
 # Remove-SafeguardAsset
 # Remove-SafeguardEventSubscription
 #
-writeCallHeader "Running Event Subscription Creation Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $removeAsset = $false
 
@@ -56,3 +57,5 @@ try {
    if ($subscriptionId) { try { Remove-SafeguardEventSubscription -SubscriptionId $subscriptionId > $null} catch {} }
    try { if ($removeAsset) {Remove-SafeguardAsset -AssetToDelete $assetName > $null} } catch {}
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo

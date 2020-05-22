@@ -6,7 +6,8 @@ Files (all must be in the same directory):
                                  from powershell commandline. Can also be run from
                                  VisualStudio Code or Powershell ISE.
   harness-data.ps1             - home for "global" variables
-  cmdlet-tests-*.ps1           - blocks of tests. only meant to be dot-source invoked 
+  harness-functions.ps1        - functions used by harness and cmdlet-tests
+  cmdlet-tests-\*.ps1           - blocks of tests. only meant to be dot-source invoked 
                                  from harness. Do not invoke these by hand.
   license-123-456-000.dlv      - perpetual SPP license for testing. Use this one or
                                  supply your own (make sure to edit the harness to

@@ -4,7 +4,8 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
-writeCallHeader "Running Miscellaneous Tests"
+$TestBlockName ="Running Miscellaneous Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # TODO - stubbed code
 # would not object to breaking these down further, but until then ...
 #Enable-SafeguardBmcConfiguration - !$isVm
@@ -143,3 +144,5 @@ infoResult "Invoke-SafeguardApplianceShutdown -Reason ""Give a reason here"""
 infoResult "Update-SafeguardAccessToken" "requires user interaction"
 infoResult "Enable-SafeguardTls12Only" "requires user interaction, use Get-SafeguardTls12OnlyStatus to see the current setting"
 infoResult "Disable-SafeguardTls12Only" "requires user interaction, use Get-SafeguardTls12OnlyStatus to see the current setting"
+
+testBlockHeader "end" $TestBlockName $blockInfo

@@ -4,7 +4,8 @@ try {
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
-writeCallHeader "Check Help Function for all commands"
+$TestBlockName ="Check Help Function for all commands"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # Runs all commands with a -? parameter and looks for output.
 # Will only complain if a given command doesn't return some help.
 # Note that it's not really picky about *what's* returned, just as
@@ -29,3 +30,4 @@ try {
 } catch {
    badResult "Help general" "Unexpected error checking help output" $_.Exception
 }
+testBlockHeader "end" $TestBlockName $blockInfo

@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName = "Running Password Profile Creation Tests"
 # ===== Covered Commands =====
 # Copy-SafeguardPasswordProfile
 # Edit-SafeguardPasswordProfile
@@ -16,7 +17,7 @@
 # Remove-SafeguardPasswordProfile
 # Rename-SafeguardPasswordProfile
 #
-writeCallHeader "Running Password Profile Creation Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $pwdProfileName = "New Password Profile"
    $copyPwdProfileName = "Copy New Password Profile"
@@ -59,3 +60,5 @@ catch {
    try { Remove-SafeguardPasswordCheckSchedule "$checkSchedName" > $null } catch { }
    try { Remove-SafeguardPasswordChangeSchedule "$changeSchedName" > $null } catch { }
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo

@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName ="Running New Schedule Creation Tests"
 # ===== Covered Commands =====
 # New-SafeguardSchedule
 # New-SafeguardScheduleDaily
@@ -11,7 +12,7 @@
 # New-SafeguardScheduleMonthlyByDayOfWeek
 # New-SafeguardScheduleWeekly
 #
-writeCallHeader "Running New Schedule Creation Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # This is just to test schedule creation calls - not assigning them to anything
 try {
    $schedPlain = New-SafeguardSchedule -MonthsByDayOfWeek -ScheduleInterval 6 -WeekOfMonth Last -DayOfWeekOfMonth Saturday -StartHour 1 -StartMinute 30 -TimeZone "Eastern Standard Time"
@@ -90,3 +91,5 @@ try {
 catch {
    badResult "general" "Unexpected error testing schedule creation"  $_.Exception
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo

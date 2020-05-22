@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName ="Running Check and Change Schedule Creation Tests"
 # ===== Covered Commands =====
 # Copy-SafeguardPasswordChangeSchedule
 # Copy-SafeguardPasswordCheckSchedule
@@ -17,7 +18,7 @@
 # Rename-SafeguardPasswordChangeSchedule
 # Rename-SafeguardPasswordCheckSchedule
 #
-writeCallHeader "Running Check and Change Schedule Creation Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $changeScheduleName = "Change Schedule #1"
    $checkScheduleName = "Check Schedule #1"
@@ -67,3 +68,5 @@ try {
    try { Remove-SafeguardPasswordCheckSchedule -CheckScheduleToDelete "$checkScheduleName" > $null } catch { }
    try { Remove-SafeguardPasswordCheckSchedule -CheckScheduleToDelete "$copyCheckScheduleName" > $null } catch { }
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo

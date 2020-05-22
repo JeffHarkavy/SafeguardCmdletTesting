@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName ="Running Asset Partition Tests"
 # ===== Covered Commands =====
 # Add-SafeguardAssetPartitionOwner
 # Edit-SafeguardAssetPartition
@@ -18,7 +19,7 @@
 # Remove-SafeguardAssetPartitionOwner
 # Remove-SafeguardUser
 # 
-writeCallHeader "Running Asset Partition Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $newPartitionName = "New Asset Partition"
    $newPartition = New-SafeguardAssetPartition -Name $newPartitionName
@@ -64,3 +65,5 @@ catch {
    if ($deletePartitionOwner) { try { Remove-SafeguardUser -UserToDelete $partitionOwnerUserName > $null} catch {} }
    try { Remove-SafeguardAssetPartition -AssetPartitionToDelete "$newPartitionName" > $null } catch { }
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo

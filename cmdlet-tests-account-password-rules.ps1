@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName = "Running Account Password Rules Tests"
 # ===== Covered Commands =====
 # Copy-SafeguardAccountPasswordRule
 # Edit-SafeguardAccountPasswordRule
@@ -11,7 +12,7 @@
 # Remove-SafeguardAccountPasswordRule
 # Rename-SafeguardAccountPasswordRule
 #
-writeCallHeader "Running Account Password Rules Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $pwdRuleName = "ps.NewPwdRule_001"
    $copyPwdRuleName = "Copy $pwdRuleName"
@@ -37,3 +38,4 @@ catch {
    try { Remove-SafeguardAccountPasswordRule -PasswordRuleToDelete $pwdRuleName > $null } catch { }
    try { Remove-SafeguardAccountPasswordRule -PasswordRuleToDelete "$copyPwdRuleName" > $null } catch { }
 }
+testBlockHeader "end" $TestBlockName $blockInfo

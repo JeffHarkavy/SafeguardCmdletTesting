@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName ="Running Assets, Accounts, and Groups Tests"
 # ===== Covered Commands =====
 # Add-SafeguardAccountGroupMember
 # Add-SafeguardAssetGroupMember
@@ -23,7 +24,7 @@
 # Remove-SafeguardAssetAccount
 # Remove-SafeguardAssetGroupMember
 # 
-writeCallHeader "Running Assets, Accounts, and Groups Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # TODO - stubbed code
 #Invoke-SafeguardAssetAccountPasswordChange
 #Invoke-SafeguardAssetSshHostKeyDiscovery
@@ -187,3 +188,5 @@ try {
    try { Remove-SafeguardAssetGroup -GroupToDelete "$assetGroupName" > $null } catch {}
    try { Remove-SafeguardAccountGroup -GroupToDelete "$accountGroupName" > $null } catch {}
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo

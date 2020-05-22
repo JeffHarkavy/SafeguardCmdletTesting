@@ -4,50 +4,6 @@ param([Parameter(Mandatory=$false, ValueFromRemainingArguments=$true)][string[]]
 $SCRIPT_PATH = (Split-Path $myInvocation.MyCommand.Path)
 $collectedErrors = [System.Collections.ArrayList]@()
 
-# ip address of appliance to test
-$appliance = "10.9.4.227"
-
-# uber-admin user with all admin permissions
-$userName = "sgAdmin"
-$secPassword = "Admin4SG" | ConvertTo-SecureString -AsPlainText -Force
-
-# login provider for the above ID
-$idProvider = "local"
-
-# peon user who will be added and manipulated
-$userUsername = "safeguard-ps-user"
-$secUserPassword = "Password1" | ConvertTo-SecureString -AsPlainText -Force
-$userEmail = "blah@test.com"
-#$thumb = "548d3218e6a03dff7602dcf5dd92ca25e56259a6"
-
-# Other users used for specific purposes. Will be created if not already there.
-$partitionOwnerUserName = 'partitionowner'
-$renamedUsername = "fredflintstone"
-
-# real archive server information
-# This networkaddress will also be used in Network diagnostic tests
-# Make sure to edit this to fit your environment - I don't guarantee this
-# server will be up all the time.
-$realArchiveServer = @{
-   NetworkAddress = "10.9.4.226";
-   TransferProtocol = "Scp";
-   Port = "22";
-   StoragePath = "/home/sgarchive";
-   ServiceAccountCredentialType = "Password";
-   ServiceAccountName = "root";
-   ServiceAccountPassword = "Password1" | ConvertTo-SecureString -AsPlainText -Force;
-}
-
-# names of assets, accounts, and groups to be created and meddled with
-$assetName = "ps.Asset_001"
-$assetAccountName = "ps.AssetAccount_001"
-$userGroupName = "UserGroup_001"
-$assetGroupName = "AssetGroup_001"
-$accountGroupName = "AccountGroup_001"
-
-#license file to be used for license remove/install testing
-$licenseFile = $SCRIPT_PATH + "\license-123-456-000.dlv"
-
 # flags to run / not run a given block of tests
 # add to this and create cmdlet-tests files as functionality gets added
 $Tests = @{
@@ -74,41 +30,19 @@ $resultCounts = @{
    Bad = 0;
    Info = 0;
 }
-function writeCallHeader($cmd) {
-   write-host "`n--------------------------------------------------"
-   foreach ($l in $cmd.Split([Environment]::NewLine)) {
-      write-host "-- $l"
-   }
-   write-host "--------------------------------------------------"
-}
-function goodResult($cmd, $str) {
-   Write-Host "$($cmd) : $($str)" -ForegroundColor Green
-   $resultCounts.Good++
-}
-function infoResult($cmd, $str) {
-   Write-Host "$($cmd) : $($str)" -ForegroundColor Yellow
-   $resultCounts.Info++
-}
-function badResult($cmd, $str, $exception) {
-   $exMsg = ""
-   if ($null -ne $exception) {
-      $exMsg = " - $($exception.Message)"
-   }
-   $outputLine = "$($cmd) : $($str)$($exMsg)"
-   Write-Host $outputLine  -ForegroundColor Red
-   $collectedErrors.Add($outputLine) > $null
-   $resultCounts.Bad++
-}
-function showHelp {
-   Write-Host "
---- Running Selected or All tests ---
-  Invoke with no arguments or the single argument all to run all commands.
-  Invoke with a space-delimited list of test names to run individual tests.
-  Valid test names are: "
-  $Tests.keys | foreach-object {'      {0}' -f $_}  
-  exit
-}
 
+# just moving the "global" data to a separate file for maintainability
+# (yes, it's powershell, everything is global)
+. "$script_path\harness-data.ps1"
+
+# load up the harness functions
+. "$script_path\harness-functions.ps1"
+
+# ========================================================================
+#
+#  Actual Start of Script logic
+#
+# ========================================================================
 if ($allParameters -contains "help" -or $allParameters -contains "?") {
    showHelp
 } elseif ($allParameters.Length -eq 0 -or $allParameters -contains "all") {
@@ -139,6 +73,7 @@ foreach ($t in ($Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"}
 pause
 
 try {
+   $fullRunInfo = testBlockHeader "begin" "All Test Blocks"
    Connect-Safeguard -Appliance $appliance -IdentityProvider $idProvider -Password $secPassword -Username $userName -Insecure
    goodResult "Connect-Safeguard" "Success"
 
@@ -388,10 +323,7 @@ catch {
 finally {
    Disconnect-Safeguard
 
-   writeCallHeader "Final Tally"
-   Write-Host "Info: $($resultCounts.Info)" -ForegroundColor Yellow
-   Write-Host "Good: $($resultCounts.Good)" -ForegroundColor Green
-   Write-Host "Bad:  $($resultCounts.Bad)" -ForegroundColor Red
+   testBlockHeader "end" "All Test Blocks`nFinal Tally" $fullRunInfo 
    if ($resultCounts.Bad -gt 0) {
       Write-Host "===== Collected Errors =====" -ForegroundColor Red
       $collectedErrors | Write-Host -ForegroundColor Red

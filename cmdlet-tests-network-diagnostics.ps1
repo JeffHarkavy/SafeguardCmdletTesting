@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName ="Running Networking Diagnostics Tests"
 # ===== Covered Commands =====
 # Invoke-SafeguardClusterPing
 # Invoke-SafeguardClusterThroughput
@@ -14,7 +15,7 @@
 # Invoke-SafeguardSessionsTelnet
 # Invoke-SafeguardTelnet
 #
-writeCallHeader "Running Networking Diagnostics Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # TODO - stubbed code
 # Some of these need a cluster or SPS - don't have one right now
 try {
@@ -53,3 +54,4 @@ try {
 catch {
    badResult "Network Diagnostics general" "Unexpected error testing network diagnostic commands - $_.Exception.Message"
 }
+testBlockHeader "end" $TestBlockName $blockInfo

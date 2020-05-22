@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName ="Running Groups Tests"
 # ===== Covered Commands =====
 # Add-SafeguardUserGroupMember
 # Edit-SafeguardUserGroup
@@ -21,7 +22,7 @@
 #
 # n.b. - account/asset group member tests in separate file
 #
-writeCallHeader "Running Groups Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    $groupname = $userGroupName
    try {
@@ -121,3 +122,5 @@ try {
    try { Remove-SafeguardAccountGroup -GroupToDelete "$accountGroupName" > $null } catch {}
    if ($removeNewGroupUser) { try { Remove-SafeguardUser -UserToDelete $userUsername > $null } catch {} }
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo

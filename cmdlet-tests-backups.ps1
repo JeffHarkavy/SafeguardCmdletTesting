@@ -4,7 +4,8 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
-writeCallHeader "Running Backups Tests"
+$TestBlockName ="Running Backups Tests"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 # TODO - stubbed code
 #Restore-SafeguardBackup
 #Save-SafeguardBackupToArchive
@@ -50,3 +51,5 @@ try {
    badResult "Backups general" "Unexpected error in Backups tests" $_.Exception
 } finally {
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo

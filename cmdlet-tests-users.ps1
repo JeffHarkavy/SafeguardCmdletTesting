@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName = "Running Users Tests"
 # ===== Covered Commands =====
 # Disable-SafeguardUser
 # Edit-SafeguardUser
@@ -14,7 +15,7 @@
 # Rename-SafeguardUser
 # Set-SafeguardUserPassword
 #
-writeCallHeader "Running Users Tests"
+$startInfo = testBlockHeader "begin" $TestBlockName
 try {
    try {
       $newUser = Get-SafeguardUser -UserToGet $userUsername
@@ -64,3 +65,5 @@ try {
    try { Remove-SafeguardUser -UserToDelete $userUsername > $null } catch {}
    try { Remove-SafeguardUser -UserToDelete $renamedUsername > $null } catch {}
 }
+
+testBlockHeader "end" $TestBlockName $startInfo

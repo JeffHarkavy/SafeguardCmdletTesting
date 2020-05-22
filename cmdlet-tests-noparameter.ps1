@@ -4,6 +4,7 @@
    write-host "Not meant to be run as a standalone script" -ForegroundColor Red
    exit
 }
+$TestBlockName = "Running 'no parameter' type commands"
 
 # So this is really no-parameter ish commands. Some take a minimal parameter just to get to run
 # but they're all just simple commands that can be run w/o any other data setup.
@@ -83,7 +84,7 @@ $commands = @{
    FindSafeguardEvent =                             @{cmdName = 'Find-SafeguardEvent'; onLTS=$false; cmd = "Find-SafeguardEvent req"; pipe = "format-table";};
 }
 
-writeCallHeader "Running 'no parameter' type commands"
+$blockInfo = testBlockHeader "begin" $TestBlockName
 try {
    foreach ($t in ($commands.GetEnumerator() | Sort {$_.Key})) {
       if ($null -ne $t.Value.onVm -and $t.Value.onVm -ne $isVm) {
@@ -101,7 +102,11 @@ try {
          $cmd += " | $($t.Value.pipe)"
       }
       try {
-         Invoke-Expression $cmd
+         # theoretically the pipe to out-host should not be necessary, but
+         # without it the output from the rapid invocation of commands can
+         # appear out-of-order with the header & result line.
+         # i really hate powershell
+         Invoke-Expression $cmd | out-host
          goodResult "$($t.Value.cmdName)" "Successfully executed"
       } catch {
          badResult "$($t.Value.cmdName)" "Unepxected error" $_.Exception
@@ -111,3 +116,5 @@ try {
 catch {
    badResult "no-parameter general" "Unexpected error running no-parameter command"  $_.Exception
 }
+
+testBlockHeader "end" $TestBlockName $blockInfo
