@@ -90,7 +90,7 @@ try {
       if ($null -ne $t.Value.onVm -and $t.Value.onVm -ne $isVm) {
          continue
       }
-      if ($null -ne $t.Value.onLTS -and $t.Value.onLTS -ne $thisIsLTS) {
+      if ($null -ne $t.Value.onLTS -and $t.Value.onLTS -ne $isLTS) {
          continue
       }
       writeCallHeader $($t.Value.cmdName)

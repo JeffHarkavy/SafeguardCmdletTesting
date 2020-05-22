@@ -12,7 +12,7 @@ $blockInfo = testBlockHeader "begin" $TestBlockName
 #Set-SafeguardBmcAdminPassword - !$isVm
 #Repair-SafeguardSessionModule
 #Set-SafeguardTime
-#Test-SafeguardAuditLogArchive - !$thisIsLTS
+#Test-SafeguardAuditLogArchive - !$isLTS
 
 # === COVERED COMMANDS ===
 # Edit-SafeguardArchiveServer

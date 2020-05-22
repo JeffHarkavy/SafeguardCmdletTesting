@@ -74,6 +74,7 @@ pause
 
 try {
    $fullRunInfo = testBlockHeader "begin" "All Test Blocks"
+
    Connect-Safeguard -Appliance $appliance -IdentityProvider $idProvider -Password $secPassword -Username $userName -Insecure
    goodResult "Connect-Safeguard" "Success"
 
@@ -81,10 +82,11 @@ try {
    goodResult "Get-SafeguardVersion" "Success"
    $sgVersion = Get-SafeguardVersion
    $sgVersion | format-table
+   # TODO Make sure to add any other known "vm" types
    $isVm = $sgVersion.BuildPlatform -match "hyperv" -or $sgVersion.BuildPlatform -match "vmware"
-   $thisIsLTS = $sgVersion.Minor -eq "0"
+   $isLTS = $sgVersion.Minor -eq "0"
 
-   writeCallHeader "Test-SafeguardVersion - min 6.0"
+   writeCallHeader "Test-SafeguardVersion - minimum 6.0"
    Test-SafeguardVersion -MinVersion 6.0
    goodResult "Test-SafeguardVersion" "Success"
  
@@ -228,8 +230,8 @@ try {
    #Get-SafeguardMyRequest
    #Get-SafeguardMyReview
    #Get-SafeguardRequestableAccount
-   #Get-SafeguardAccessRequestSshHostKey - !$thisIsLTS
-   #Get-SafeguardAccessRequestSshKey - !$thisIsLTS
+   #Get-SafeguardAccessRequestSshHostKey - !$isLTS
+   #Get-SafeguardAccessRequestSshKey - !$isLTS
    #endregion
 
    #region Cluster Management
