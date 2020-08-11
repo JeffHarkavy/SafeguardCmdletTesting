@@ -36,7 +36,7 @@ try {
    #goodResult "Invoke-SafeguardMemberThroughput" "Success"
 
    writeCallHeader "Invoke-SafeguardPing"
-   Invoke-SafeguardPing -NetworkAddress $($realArchiveServer.NetworkAddress)
+   Invoke-SafeguardPing -NetworkAddress $($DATA.realArchiveServer.NetworkAddress)
    goodResult "Invoke-SafeguardPing" "Success"
 
    #writeCallHeader "Invoke-SafeguardSessionsPing"
@@ -48,7 +48,7 @@ try {
    #goodResult "Invoke-SafeguardSessionsTelnet" "Success"
 
    writeCallHeader "Invoke-SafeguardTelnet"
-   Invoke-SafeguardTelnet -NetworkAddress $($realArchiveServer.NetworkAddress) -Port 22
+   Invoke-SafeguardTelnet -NetworkAddress $($DATA.realArchiveServer.NetworkAddress) -Port 22
    goodResult "Invoke-SafeguardTelnet" "Success"
 }
 catch {

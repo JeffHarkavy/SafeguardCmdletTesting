@@ -24,7 +24,7 @@ $blockInfo = testBlockHeader "begin" $TestBlockName
 # n.b. - account/asset group member tests in separate file
 #
 try {
-   $groupname = $userGroupName
+   $groupname = $DATA.userGroupName
    try {
       $userGroup = (Get-SafeguardUserGroup -GroupToGet "$groupname")[0]
       infoResult "Get-SafeguardUserGroup"  "$groupname already exists"
@@ -42,7 +42,7 @@ try {
    $userGroup = Edit-SafeguardUserGroup -GroupToEdit "$groupname" -Description "Description for $groupname"
    goodResult "Edit-SafeguardUserGroup" "Successfully edited $($userGroup.Name) Description '$($userGroup.Description)'"
 
-   $groupname = $assetGroupName
+   $groupname = $DATA.assetGroupName
    try {
       $assetGroup = (Get-SafeguardAssetGroup -GroupToGet "$groupname")[0]
       infoResult "Get-SafeguardAssetGroup"  "$groupname already exists"
@@ -58,7 +58,7 @@ try {
       }
    }
 
-   $groupname = $accountGroupName
+   $groupname = $DATA.accountGroupName
    try {
       $accountGroup = (Get-SafeguardAccountGroup -GroupToGet "$groupname")[0]
       infoResult "Get-SafeguardAccountGroup"  "$groupname already exists"
@@ -76,51 +76,51 @@ try {
 
    try {
       try {
-         New-SafeguardUser -NewUserName $userUsername -FirstName "Safeguard-ps" -LastName "User" -NoPassword -Provider -1 > $null
+         New-SafeguardUser -NewUserName $DATA.userUsername -FirstName "Safeguard-ps" -LastName "User" -NoPassword -Provider -1 > $null
          $removeNewGroupUser = $true
       } catch {
-         infoResult "New-SafeguardUser" "User $userUsername already exists for user group testing"
+         infoResult "New-SafeguardUser" "User $($DATA.userUsername) already exists for user group testing"
       }
 
-      Add-SafeguardUserGroupMember -Group $userGroup.Name -UserList $userUsername > $null
+      Add-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.userUsername > $null
       $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
-      if ($userUsername -in $groupMembers) {
-         goodResult "Add-SafeguardUserGroupMember"  "$userUsername successfully added to $($userGroup.Name)"
+      if ($DATA.userUsername -in $groupMembers) {
+         goodResult "Add-SafeguardUserGroupMember"  "$($DATA.userUsername) successfully added to $($userGroup.Name)"
       }
       else {
-         badResult "Add-SafeguardUserGroupMember"  "$userUsername NOT found in $($userGroup.Name)"
+         badResult "Add-SafeguardUserGroupMember"  "$($DATA.userUsername) NOT found in $($userGroup.Name)"
       }
 
-      Remove-SafeguardUserGroupMember -Group $userGroup.Name -UserList $userUsername > $null
+      Remove-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.userUsername > $null
       $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
-      if ($null -eq $groupMembers -or -not $userUsername -in $groupMembers) {
-         goodResult "Remove-SafeguardUserGroupMember"  "$userUsername successfully removed from $($userGroup.Name)"
+      if ($null -eq $groupMembers -or -not $DATA.userUsername -in $groupMembers) {
+         goodResult "Remove-SafeguardUserGroupMember"  "$($DATA.userUsername) successfully removed from $($userGroup.Name)"
       }
       else {
-         badResult "Remove-SafeguardUserGroupMember"  "$userUsername NOT found in $($userGroup.Name)"
+         badResult "Remove-SafeguardUserGroupMember"  "$($DATA.userUsername) NOT found in $($userGroup.Name)"
       }
 
-      Edit-SafeguardUserGroup -GroupToEdit $userGroup.Name -UserList $userUsername -Operation add > $null
+      Edit-SafeguardUserGroup -GroupToEdit $userGroup.Name -UserList $DATA.userUsername -Operation add > $null
       $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
-      if ($userUsername -in $groupMembers) {
-         goodResult "Edit-SafeguardUserGroup"  "$userUsername successfully edited to add to $($userGroup.Name)"
+      if ($DATA.userUsername -in $groupMembers) {
+         goodResult "Edit-SafeguardUserGroup"  "$($DATA.userUsername) successfully edited to add to $($userGroup.Name)"
       }
       else {
-         badResult "Edit-SafeguardUserGroup"  "$userUsername NOT edited to add to $($userGroup.Name)"
+         badResult "Edit-SafeguardUserGroup"  "$($DATA.userUsername) NOT edited to add to $($userGroup.Name)"
       }
 
-      Remove-SafeguardUserGroup -GroupToDelete "$userGroupName" > $null
-      goodResult "Remove-SafeguardUserGroup" "Successfully removed $userGroupName"
+      Remove-SafeguardUserGroup -GroupToDelete "$($DATA.userGroupName)" > $null
+      goodResult "Remove-SafeguardUserGroup" "Successfully removed $($DATA.userGroupName)"
    } catch {
       badResult "general"  "Error adding $userUserName to group $($userGroup.Name)" $_.Exception
    } 
 } catch {
    badResult "Groups general"  "Unexpected error in Groups tests" $_.Exception
 } finally {
-   try { Remove-SafeguardUserGroup -GroupToDelete "$userGroupName" > $null } catch {}
-   try { Remove-SafeguardAssetGroup -GroupToDelete "$assetGroupName" > $null } catch {}
-   try { Remove-SafeguardAccountGroup -GroupToDelete "$accountGroupName" > $null } catch {}
-   if ($removeNewGroupUser) { try { Remove-SafeguardUser -UserToDelete $userUsername > $null } catch {} }
+   try { Remove-SafeguardUserGroup -GroupToDelete "$($DATA.userGroupName)" > $null } catch {}
+   try { Remove-SafeguardAssetGroup -GroupToDelete "$($DATA.assetGroupName)" > $null } catch {}
+   try { Remove-SafeguardAccountGroup -GroupToDelete "$($DATA.accountGroupName)" > $null } catch {}
+   if ($removeNewGroupUser) { try { Remove-SafeguardUser -UserToDelete $DATA.userUsername > $null } catch {} }
 }
 
 testBlockHeader "end" $TestBlockName $blockInfo

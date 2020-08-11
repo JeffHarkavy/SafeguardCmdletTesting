@@ -93,7 +93,7 @@ try {
    infoResult "Get-SafeguardLicense" "Retrieved license key $licenseKey"
    Uninstall-SafeguardLicense $licenseKey > $null
    goodResult "Uninstall-SafeguardLicense" "Successfully uninstalled license $licenseKey"
-   $newLicense = Install-SafeguardLicense -LicenseFile "$licenseFile"
+   $newLicense = Install-SafeguardLicense -LicenseFile "$($DATA.licenseFile)"
    goodResult "Install-SafeguardLicense" "Successfully installed license $($newLicense.Key)"
 } catch {
    badResult "Licensing general" "Unexpected error in licensing" $_.Exception
@@ -102,13 +102,13 @@ try {
 try {
    $archSrvName = "ps.ArchSrv_001"
    $archiveServer = New-SafeguardArchiveServer -DisplayName $archSrvName `
-     -NetworkAddress $realArchiveServer.NetworkAddress `
-     -TransferProtocol $realArchiveServer.TransferProtocol `
-     -Port $realArchiveServer.Port `
-     -StoragePath $realArchiveServer.StoragePath `
-     -ServiceAccountCredentialType $realArchiveServer.ServiceAccountCredentialType `
-     -ServiceAccountName $realArchiveServer.ServiceAccountName `
-     -ServiceAccountPassword $realArchiveServer.ServiceAccountPassword `
+     -NetworkAddress $DATA.realArchiveServer.NetworkAddress `
+     -TransferProtocol $DATA.realArchiveServer.TransferProtocol `
+     -Port $DATA.realArchiveServer.Port `
+     -StoragePath $DATA.realArchiveServer.StoragePath `
+     -ServiceAccountCredentialType $DATA.realArchiveServer.ServiceAccountCredentialType `
+     -ServiceAccountName $DATA.realArchiveServer.ServiceAccountName `
+     -ServiceAccountPassword $DATA.realArchiveServer.ServiceAccountPassword `
      -AcceptSshHostKey
    goodResult "New-SafeguardArchiveServer" "Successfully created Archive Server $archSrvName Id=$($archiveServer.Id)"
 
