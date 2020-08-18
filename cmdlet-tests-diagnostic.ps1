@@ -6,20 +6,20 @@ try {
 }
 $TestBlockName = "Running Diagnostic Package Tests"
 $blockInfo = testBlockHeader "begin" $TestBlockName
-   # TODO - stubbed code
-   #Clear-SafeguardDiagnosticPackage
-   #Get-SafeguardDiagnosticPackage
-   #Get-SafeguardDiagnosticPackageLog
-   #Get-SafeguardDiagnosticPackageStatus
-   #Invoke-SafeguardDiagnosticPackage
-   #Set-SafeguardDiagnosticPackage
+# TODO - stubbed code
+# Clear-SafeguardDiagnosticPackage
+# Get-SafeguardDiagnosticPackage
+# Get-SafeguardDiagnosticPackageLog
+# Get-SafeguardDiagnosticPackageStatus
+# Invoke-SafeguardDiagnosticPackage
+# Set-SafeguardDiagnosticPackage
 
 # ===== Covered Commands =====
 #
 
 try {
 } catch {
-   badResult "Diagnostic Package general" "Unexpected error in Diagnostic Package test" $_.Exception
+   badResult "Diagnostic Package general" "Unexpected error in Diagnostic Package test" $_
 } finally {
 #try { if ($directoryAdded -eq 1) { Remove-SafeguardDirectory -DirectoryToDelete $domainname > $null } } catch {}
 }

@@ -52,7 +52,7 @@ try {
    goodResult "Removed"  "AccountPasswordRule and Check and Change schedules"
 }
 catch {
-   badResult "general"  "Error working with Password Profiles" $_.Exception
+   badResult "general"  "Error working with Password Profiles" $_
 } finally {
    try { Remove-SafeguardPasswordProfile -ProfileToDelete "$pwdProfileName" > $null } catch { }
    try { Remove-SafeguardPasswordProfile -ProfileToDelete "$copyPwdProfileName" > $null } catch { }

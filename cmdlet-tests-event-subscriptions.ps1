@@ -40,7 +40,7 @@ try {
       $getSubscription = Get-SafeguardEventSubscription -SubscriptionId $subscription.Id
       goodResult "Get-SafeguardEventSubscription" "Successfully retrieved Subscription Id=$subscriptionId"
    } catch {
-      badResult "Get-SafeguardEventSubscription" "Did NOT retrieve subscription Id=$subscriptionId" $_.Exception
+      badResult "Get-SafeguardEventSubscription" "Did NOT retrieve subscription Id=$subscriptionId" $_
    }
 
    $findSubscription = Find-SafeguardEventSubscription -SearchString edited
@@ -52,7 +52,7 @@ try {
    Remove-SafeguardEventSubscription -SubscriptionId $subscriptionID > $null
    goodResult "Remove-SafeguardEventSubscription" "Successfully removed event Subscription Id=$($subscription.Id)'"
 } catch {
-   badResult "Event Subscription general" "Unexpected error testing Event Subscriptions"  $_.Exception
+   badResult "Event Subscription general" "Unexpected error testing Event Subscriptions"  $_
 } finally {
    if ($subscriptionId) { try { Remove-SafeguardEventSubscription -SubscriptionId $subscriptionId > $null} catch {} }
    try { if ($removeAsset) {Remove-SafeguardAsset -AssetToDelete $DATA.assetName > $null} } catch {}

@@ -1,2 +1,6 @@
 *.sgb
-
+backups/*
+certs/*
+logs/*
+reports/*
+~$*

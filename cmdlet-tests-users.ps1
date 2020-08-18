@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName = "Running Users Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader "begin" $TestBlockName 9
 # ===== Covered Commands =====
 # Disable-SafeguardUser
 # Edit-SafeguardUser
@@ -21,7 +21,7 @@ try {
    $newUser = createUser $DATA.userUsername
 
    $getuser = Get-SafeguardUser -UserToGet $DATA.userUsername
-   goodResult "Get-SafeguardUser" "Successfully got $userUserName"
+   goodResult "Get-SafeguardUser" "Successfully got $($Data.userUserName)"
 
    Set-SafeguardUserPassword -Password $DATA.secUserPassword -UserToEdit $DATA.userUsername > $null
    goodResult "Set-SafeguardUserPassword" "$($newUser.UserName) created"
@@ -44,11 +44,11 @@ try {
       badResult "Rename-SafeguardUser" "User $($newUser.UserName) NOT renamed"
    }
 
-   $foundUser = Find-SafeguardUser $userUserName
-   if ($foundUser) { goodResult "Find-SafeguardUser" "found $userUserName" }
-   else { badResult "Find-SafeguardUser" "DID NOT find $userUserName" }
+   $foundUser = Find-SafeguardUser $Data.userUserName
+   if ($foundUser) { goodResult "Find-SafeguardUser" "found $($Data.userUserName)" }
+   else { badResult "Find-SafeguardUser" "DID NOT find $($Data.userUserName)" }
 } catch {
-      badResult "Users general" "Unexpected error in Users test" $_.Exception
+      badResult "Users general" "Unexpected error in Users test" $_
 } finally {
    try { Remove-SafeguardUser -UserToDelete $DATA.userUsername > $null } catch {}
    try { Remove-SafeguardUser -UserToDelete $DATA.renamedUsername > $null } catch {}

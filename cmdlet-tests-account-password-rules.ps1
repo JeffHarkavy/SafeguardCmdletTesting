@@ -33,7 +33,7 @@ try {
    goodResult "Remove-SafeguardAccountPasswordRule"  "successfully deleted $pwdRuleName and $copyPwdRuleName"
 }
 catch {
-   badResult "general"  "Error working with Account Password Rules" $_.Exception
+   badResult "general"  "Error working with Account Password Rules" $_
 } finally {
    try { Remove-SafeguardAccountPasswordRule -PasswordRuleToDelete $pwdRuleName > $null } catch { }
    try { Remove-SafeguardAccountPasswordRule -PasswordRuleToDelete "$copyPwdRuleName" > $null } catch { }

@@ -57,7 +57,7 @@ $commands = @{
    GetSafeguardEventName =                          @{cmdName = 'Get-SafeguardEventName';};
    GetSafeguardHealth =                             @{cmdName = 'Get-SafeguardHealth';};
    GetSafeguardPlatform =                           @{cmdName = 'Get-SafeguardPlatform'; cmd = "(Get-SafeguardPlatform).DisplayName";};
-   GetSafeguardReportA2aEntitlement =               @{cmdName = 'Get-SafeguardReportA2aEntitlement';};
+   GetSafeguardReportA2aEntitlement =               @{cmdName = 'Get-SafeguardReportA2aEntitlement'; cmd = "Get-SafeguardReportA2aEntitlement -OutputDirectory ""$($DATA.outputPaths.reports)""";};
    GetSafeguardReportAccountWithoutPassword =       @{cmdName = 'Get-SafeguardReportAccountWithoutPassword'; cmd = "Get-SafeguardReportAccountWithoutPassword -StdOut";};
    GetSafeguardReportAssetManagementConfiguration = @{cmdName = 'Get-SafeguardReportAssetManagementConfiguration'; cmd = "Get-SafeguardReportAssetManagementConfiguration -StdOut";};
    GetSafeguardReportDailyAccessRequest =           @{cmdName = 'Get-SafeguardReportDailyAccessRequest'; cmd = "Get-SafeguardReportDailyAccessRequest -StdOut";};
@@ -75,7 +75,6 @@ $commands = @{
    GetSafeguardTimeZone =                           @{cmdName = 'Get-SafeguardTimeZone'; cmd = "(Get-SafeguardTimeZone).DisplayName";};
    GetSafeguardTls12OnlyStatus =                    @{cmdName = 'Get-SafeguardTls12OnlyStatus';};
    GetSafeguardTrustedCertificate =                 @{cmdName = 'Get-SafeguardTrustedCertificate'; };
-   WaitSafeguardApplianceStateOnline =              @{cmdName = 'Wait-SafeguardApplianceStateOnline';};
    EnableSafeguardA2aService =                      @{cmdName = 'Enable-SafeguardA2aService';};
    DisableSafeguardA2aService =                     @{cmdName = 'Disable-SafeguardA2aService';};
    GetSafeguardAccessTokenStatus =                  @{cmdName = 'Get-SafeguardAccessTokenStatus';};
@@ -109,12 +108,12 @@ try {
          Invoke-Expression $cmd | out-host
          goodResult "$($t.Value.cmdName)" "Successfully executed"
       } catch {
-         badResult "$($t.Value.cmdName)" "Unepxected error" $_.Exception
+         badResult "$($t.Value.cmdName)" "Unepxected error" $_
       }
    }
 }
 catch {
-   badResult "no-parameter general" "Unexpected error running no-parameter command"  $_.Exception
+   badResult "no-parameter general" "Unexpected error running no-parameter command"  $_
 }
 
 testBlockHeader "end" $TestBlockName $blockInfo

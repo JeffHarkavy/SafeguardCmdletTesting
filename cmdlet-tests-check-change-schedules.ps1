@@ -61,7 +61,7 @@ try {
    Remove-SafeguardPasswordCheckSchedule -CheckScheduleToDelete "$($checkSchedule.Name)" > $null
    goodResult "Remove-SafeguardPasswordCheckSchedule"  "successfully removed $($checkSchedule.Name)"
 } catch {
-   badResult "general"  "Error working with Check and Change Schedules" $_.Exception
+   badResult "general"  "Error working with Check and Change Schedules" $_
 } finally {
    try { Remove-SafeguardPasswordChangeSchedule -ChangeScheduleToDelete "$changeScheduleName" > $null } catch { }
    try { Remove-SafeguardPasswordChangeSchedule -ChangeScheduleToDelete "$copyChangeScheduleName" > $null } catch { }

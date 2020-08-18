@@ -11,23 +11,23 @@ $blockInfo = testBlockHeader "begin" $TestBlockName
 # Note that it's not really picky about *what's* returned, just as
 # long as the call doesn't throw an exception for a missing command.
 try {
-   $collectedOutput = ""
-   $collectedErrors = ""
+   $Output = ""
+   $Errors = ""
    foreach ($commandName in (get-safeguardcommand).Name|sort) {
       $cmd = $commandName + " -? | findstr  /b /i /r /c:""^ * $commandName"""
-      $collectedOutput += "`n*** $cmd ***`n"
+      $Output += "`n*** $cmd ***`n"
       try {
-         $collectedOutput += (invoke-expression $cmd) | Out-String
+         $Output += (invoke-expression $cmd) | Out-String
       } catch {
-         $collectedErrors += "***no command help for $commandName`n"
+         $Errors += "***no command help for $commandName`n"
       }
    }
-   if ($collectedErrors -ne "") {
-      badResult "Help" "$collectedErrors"
+   if ($Errors -ne "") {
+      badResult "Help" "$Errors"
    } else {
       goodResult "Help" "All commands returned help output"
    }
 } catch {
-   badResult "Help general" "Unexpected error checking help output" $_.Exception
+   badResult "Help general" "Unexpected error checking help output" $_
 }
 testBlockHeader "end" $TestBlockName $blockInfo

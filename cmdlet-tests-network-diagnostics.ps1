@@ -52,6 +52,6 @@ try {
    goodResult "Invoke-SafeguardTelnet" "Success"
 }
 catch {
-   badResult "Network Diagnostics general" "Unexpected error testing network diagnostic commands - $_.Exception.Message"
+   badResult "Network Diagnostics general" "Unexpected error testing network diagnostic commands - $_.Message"
 }
 testBlockHeader "end" $TestBlockName $blockInfo

@@ -7,20 +7,20 @@ try {
 }
 $TestBlockName = "Running Starling Tests"
 $blockInfo = testBlockHeader "begin" $TestBlockName
-   # TODO - stubbed code
-   #Get-SafeguardStarlingSubscription
-   #Invoke-SafeguardStarlingJoin
-   #New-SafeguardStarling2faAuthentication
-   #New-SafeguardStarlingSubscription
-   #Remove-SafeguardStarlingSubscription
-   #Set-SafeguardStarlingSetting
-#
+# TODO - stubbed code
+# Get-SafeguardStarlingSubscription
+# Invoke-SafeguardStarlingJoin
+# New-SafeguardStarling2faAuthentication
+# New-SafeguardStarlingSubscription
+# Remove-SafeguardStarlingSubscription
+# Set-SafeguardStarlingSetting
+
 # ===== Covered Commands =====
 #
 
 try {
 } catch {
-   badResult "Starling general" "Unexpected error in Starling test" $_.Exception
+   badResult "Starling general" "Unexpected error in Starling test" $_
 } finally {
 #try { if ($directoryAdded -eq 1) { Remove-SafeguardDirectory -DirectoryToDelete $domainname > $null } } catch {}
 }

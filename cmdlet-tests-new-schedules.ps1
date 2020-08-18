@@ -89,7 +89,7 @@ try {
    }
 }
 catch {
-   badResult "general" "Unexpected error testing schedule creation"  $_.Exception
+   badResult "general" "Unexpected error testing schedule creation"  $_
 }
 
 testBlockHeader "end" $TestBlockName $blockInfo

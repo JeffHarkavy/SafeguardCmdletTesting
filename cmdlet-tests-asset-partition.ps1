@@ -60,7 +60,7 @@ try {
    goodResult "Remove-SafeguardAssetPartition" "$($newPartition.name) removed"
 }
 catch {
-   badResult "general" "Error working with Asset Partitions" $_.Exception
+   badResult "general" "Error working with Asset Partitions" $_
 } finally {
    if ($deletePartitionOwner) { try { Remove-SafeguardUser -UserToDelete $DATA.partitionOwnerUserName > $null} catch {} }
    try { Remove-SafeguardAssetPartition -AssetPartitionToDelete "$newPartitionName" > $null } catch { }

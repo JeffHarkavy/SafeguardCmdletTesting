@@ -6,6 +6,12 @@
 }
 $TestBlockName ="Running Miscellaneous Tests"
 $blockInfo = testBlockHeader "begin" $TestBlockName
+# TODO - stubbed code
+#Enable-SafeguardBmcConfiguration - !$isVm
+#Set-SafeguardBmcAdminPassword - !$isVm
+#Set-SafeguardTime
+#Test-SafeguardAuditLogArchive - !$isLTS
+
 # === COVERED COMMANDS ===
 # Edit-SafeguardArchiveServer
 # Get-SafeguardApplianceName
@@ -29,13 +35,20 @@ $blockInfo = testBlockHeader "begin" $TestBlockName
 # Test-SafeguardArchiveServer
 # Uninstall-SafeguardLicense
 # Update-SafeguardAccessToken
-
-# TODO - stubbed code
-#Enable-SafeguardBmcConfiguration - !$isVm
-#Set-SafeguardBmcAdminPassword - !$isVm
-#Repair-SafeguardSessionModule
-#Set-SafeguardTime
-#Test-SafeguardAuditLogArchive - !$isLTS
+# Wait-SafeguardApplianceStateOnline
+#
+# === "Covered" but must be done manually ===
+# Open-CsvInExcel
+# Get-SafeguardSupportBundle
+# Install-SafeguardDesktopClient
+# Invoke-SafeguardApplianceFactoryReset
+# Invoke-SafeguardApplianceReboot
+# Invoke-SafeguardApplianceShutdown
+# Update-SafeguardAccessToken
+# Enable-SafeguardTls12Only
+# Disable-SafeguardTls12Only
+# New-SafeguardTestCertificatePki
+# Repair-SafeguardSessionModule
 
 try {
    $output = Invoke-SafeguardMethod Core POST ReasonCodes -Body @{ Name = "RN12345"; Description = "Routine maintenance." }
@@ -44,7 +57,7 @@ try {
    Invoke-SafeguardMethod Core DELETE ReasonCodes/$($output.Id) > $null
    infoResult "Invoke-SafeguardMethod" "Successfuly removed reasonCode Id=$($output.Id)"
 } catch {
-   badResult "Invoke-Safegaurdmethod general" "Unexpected error" $_.Exception
+   badResult "Invoke-Safegaurdmethod general" "Unexpected error" $_
 }
 
 try {
@@ -66,7 +79,7 @@ try {
    $setX0Dns = Set-SafeguardDnsSuffix -Interface x0 -DnsSuffixes "$($x0Dns.DomainNames)"
    infoResult "Set-SafeguardDnsSuffix" "Successfuly reset X0 DnsSuffixes=$($setX0Dns.DomainNames -join ' ')"
 } catch {
-   badResult "Network Interface general" "Unexpected error in setting X0 DnsServers" $_.Exception
+   badResult "Network Interface general" "Unexpected error" $_
 }
 
 try {
@@ -78,6 +91,7 @@ try {
    } else {
       badResult "Set-SafeguardApplianceName" "Appliance name edit was NOT successful"
    }
+
    Set-SafeguardApplianceName -Name "$currentApplianceName" > $null
    if ((Get-SafeguardApplianceName) -eq $currentApplianceName) {
       infoResult "Set-SafeguardApplianceName" "successfully reverted name to $currentApplianceName"
@@ -85,23 +99,24 @@ try {
       badResult "Set-SafeguardApplianceName" "Appliance name edit was NOT successful"
    }
 } catch {
-   badResult "Appliance Name general" "Unexpected error in edit appliance name" $_.Exception
+   badResult "Appliance Name general" "Unexpected error in edit appliance name" $_
 }
 
 try {
    $licenseKey = (Get-SafeguardLicense).Key
    infoResult "Get-SafeguardLicense" "Retrieved license key $licenseKey"
+
    Uninstall-SafeguardLicense $licenseKey > $null
    goodResult "Uninstall-SafeguardLicense" "Successfully uninstalled license $licenseKey"
+
    $newLicense = Install-SafeguardLicense -LicenseFile "$($DATA.licenseFile)"
    goodResult "Install-SafeguardLicense" "Successfully installed license $($newLicense.Key)"
 } catch {
-   badResult "Licensing general" "Unexpected error in licensing" $_.Exception
+   badResult "Licensing general" "Unexpected error in licensing" $_
 }
 
 try {
-   $archSrvName = "ps.ArchSrv_001"
-   $archiveServer = New-SafeguardArchiveServer -DisplayName $archSrvName `
+   $archiveServer = New-SafeguardArchiveServer -DisplayName $DATA.realArchiveServer.archSrvName `
      -NetworkAddress $DATA.realArchiveServer.NetworkAddress `
      -TransferProtocol $DATA.realArchiveServer.TransferProtocol `
      -Port $DATA.realArchiveServer.Port `
@@ -110,13 +125,13 @@ try {
      -ServiceAccountName $DATA.realArchiveServer.ServiceAccountName `
      -ServiceAccountPassword $DATA.realArchiveServer.ServiceAccountPassword `
      -AcceptSshHostKey
-   goodResult "New-SafeguardArchiveServer" "Successfully created Archive Server $archSrvName Id=$($archiveServer.Id)"
+   goodResult "New-SafeguardArchiveServer" "Successfully created Archive Server $($DATA.realArchiveServer.archSrvName) Id=$($archiveServer.Id)"
 
    $editedArchiveServer = Edit-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id -Description "Edited ArchSrv description"
    if ($editedArchiveServer.Description -match "ArchSrv") {
-      goodResult "Edit-SafeguardArchiveServer" "Successfully editd Archive Server $archSrvName, Description=$($archiveServer.Description)"
+      goodResult "Edit-SafeguardArchiveServer" "Successfully editd Archive Server $($DATA.realArchiveServer.archSrvName), Description=$($archiveServer.Description)"
    } else {
-      badResult "Edit-SafeguardArchiveServer" "Editing Archive Server $archSrvName was NOT successful"
+      badResult "Edit-SafeguardArchiveServer" "Editing Archive Server $($DATA.realArchiveServer.archSrvName) was NOT successful"
    }
 
    $archiveServer = Get-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id
@@ -126,9 +141,16 @@ try {
    goodResult "Test-SafeguardArchiveServer" "Successfully called test on Archive Server $($archiveServer.DisplayName) Id=$($archiveServer.Id). Check results to see test *worked* as expected."
 
    Remove-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id > $null
-   goodResult "Remove-SafeguardArchiveServer" "Successfully removed Archive Server $archSrvName Id=$($archiveServer.Id)"
+   goodResult "Remove-SafeguardArchiveServer" "Successfully removed Archive Server $($DATA.realArchiveServer.archSrvName) Id=$($archiveServer.Id)"
+
+   try {
+      $waitResults = Wait-SafeguardApplianceStateOnline -Timeout 10
+      goodResult "Wait-SafeguardApplianceStateOnline" "Successfully waited for online state"
+   } catch {
+      badResult "Wait-SafeguardApplianceStateOnline " "Unexpected error waiting for online state" $_
+   }
 } catch {
-   badResult "Archive Server general" "Unexpected error in Archive Server tests" $_.Exception
+   badResult "Archive Server general" "Unexpected error in Archive Server tests" $_
 } finally {
    if ($archiveServer.Id) { try{Remove-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id > $null} catch{} }
 }
@@ -143,5 +165,7 @@ infoResult "Invoke-SafeguardApplianceShutdown -Reason ""Give a reason here"""
 infoResult "Update-SafeguardAccessToken" "requires user interaction"
 infoResult "Enable-SafeguardTls12Only" "requires user interaction, use Get-SafeguardTls12OnlyStatus to see the current setting"
 infoResult "Disable-SafeguardTls12Only" "requires user interaction, use Get-SafeguardTls12OnlyStatus to see the current setting"
+infoResult "New-SafeguardTestCertificatePki -SubjectBaseDn ""OU=cmdletTesting,O=OneIdentityLLC,C=US"" -OutputDir ." "requires LOTS of user interaction"
+infoResult "Repair-SafeguardSessionModule" "requires user interaction. Obsolete."
 
 testBlockHeader "end" $TestBlockName $blockInfo
