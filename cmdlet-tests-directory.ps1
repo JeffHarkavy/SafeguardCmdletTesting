@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running Directory Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName 22
+$blockInfo = testBlockHeader $TestBlockName 22
 # ===== Covered Commands =====
 # Get-SafeguardDirectoryMigrationData
 # Get-SafeguardDirectory
@@ -197,4 +197,4 @@ try {
    try { if ($userAdded -eq 1) { Remove-SafeguardUser -UserToDelete $DATA.userUsername > $null } } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

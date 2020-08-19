@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running A2A Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # TODO - stubbed code
 # Add-SafeguardA2aCredentialRetrieval               
 # Clear-SafeguardA2aAccessRequestBroker             
@@ -57,5 +57,5 @@ try {
 #try { if ($directoryAdded -eq 1) { Remove-SafeguardDirectory -DirectoryToDelete $domainname > $null } } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo
 

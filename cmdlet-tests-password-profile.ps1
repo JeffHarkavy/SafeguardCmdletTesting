@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName = "Running Password Profile Creation Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Copy-SafeguardPasswordProfile
 # Edit-SafeguardPasswordProfile
@@ -61,4 +61,4 @@ catch {
    try { Remove-SafeguardPasswordChangeSchedule "$changeSchedName" > $null } catch { }
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Groups Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName 8
+$blockInfo = testBlockHeader $TestBlockName 8
 # ===== Covered Commands =====
 # Add-SafeguardUserGroupMember
 # Edit-SafeguardUserGroup
@@ -123,4 +123,4 @@ try {
    if ($removeNewGroupUser) { try { Remove-SafeguardUser -UserToDelete $DATA.userUsername > $null } catch {} }
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

@@ -6,7 +6,7 @@ try {
    exit
 }
 $TestBlockName = "Running Starling Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # TODO - stubbed code
 # Get-SafeguardStarlingSubscription
 # Invoke-SafeguardStarlingJoin
@@ -25,5 +25,5 @@ try {
 #try { if ($directoryAdded -eq 1) { Remove-SafeguardDirectory -DirectoryToDelete $domainname > $null } } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo
 

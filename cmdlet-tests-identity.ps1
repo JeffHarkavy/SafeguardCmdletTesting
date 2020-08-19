@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running Identity Provider Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Edit-SafeguardDirectoryIdentityProvider
 # Get-SafeguardDirectoryIdentityProvider
@@ -108,4 +108,4 @@ try {
    try { if ($providerAdded -eq 1) { Remove-SafeguardDirectoryIdentityProvider -DirectoryToDelete $DATA.domainName > $NULL } } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

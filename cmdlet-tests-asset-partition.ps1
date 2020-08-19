@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Asset Partition Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Add-SafeguardAssetPartitionOwner
 # Edit-SafeguardAssetPartition
@@ -66,4 +66,4 @@ catch {
    try { Remove-SafeguardAssetPartition -AssetPartitionToDelete "$newPartitionName" > $null } catch { }
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

@@ -5,14 +5,6 @@ $SCRIPT_PATH = (Split-Path $myInvocation.MyCommand.Path)
 $BASE_NAME = [System.IO.Path]::GetFileNameWithoutExtension($myInvocation.MyCommand.Name)
 $collectedErrors = [System.Collections.ArrayList]@()
 $knownVMTypes = @('vmware','hyperv')
-# You may need to change these based on your shell color settings
-$bgcolor = (get-host).ui.rawui.backgroundcolor
-$COLORS = @{
-   info      = @{back="$bgcolor"; fore="DarkBlue";};
-   bad       = @{back="$bgcolor"; fore="Red";};
-   good      = @{back="$bgcolor"; fore="DarkGreen";};
-   highlight = @{back="$bgcolor"; fore="DarkRed";};
-}
 
 # just moving the "global" data to a separate file for maintainability
 # (yes, it's powershell, everything is global)
@@ -22,6 +14,9 @@ $COLORS = @{
 . "$SCRIPT_PATH\harness-functions.ps1"
 
 $testBranch = "LTS"
+if ($allParameters -contains "all" -and $allParameters -contains "allexplicit") {
+   Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back "ALLEXPLICIT takes precedence over ALL. Only the former will be run."
+}
 if ($allParameters -contains "lts" -and $allParameters -contains "feature") {
    Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "Can not specify both LTS and Feature"
    exit
@@ -133,12 +128,12 @@ $Tests = @{
    Cluster= @{
       Seq=18; runTest = "N"; inter="Y";
       fileName = "cmdlet-tests-cluster.ps1";
-      description="Cluster operations. May require human interaction.";
+      description="Cluster operations.";
    };
    Session= @{
       Seq=19; runTest = "N"; inter="Y";
       fileName = "cmdlet-tests-sps.ps1";
-      description="Work with SPS Appliances. May require human interaction.";
+      description="Work with SPS Appliances.";
    };
    Certificates = @{
       Seq=20; runTest = "N"; inter="N";
@@ -158,14 +153,19 @@ $Tests = @{
    Starling = @{
       Seq=23; runTest = "N"; inter="N";
       fileName = "cmdlet-tests-starling.ps1";
-      description="WIP. Starling join 'n stuff";
+      description="WIP. Starling join 'n stuff.";
    };
    Patch = @{
       Seq=24; runTest = "N"; inter="Y";
       fileName = "cmdlet-tests-patch.ps1";
-      description="Tests patching commands. Requires human interaction.";
+      description="Tests patching commands.";
    };
    # Somebody has to be last, why not these 2?
+   Manual = @{
+      Seq=97; runTest = "N"; inter="Y";
+      fileName = "cmdlet-tests-manual.ps1";
+      description="Shows list of commands that have to be tested by hand. Does not actually do any tests.";
+   };
    Miscellaneous = @{
       Seq=98; runTest = "N"; inter="N";
       fileName = "cmdlet-tests-miscellaneous.ps1";
@@ -177,7 +177,8 @@ $Tests = @{
       description="Test to make sure Obsolete commands return that they are, in fact, obsolete.";
    };
 }
-# These tests must be explicitly specified - they will not be included in an "all tests" run
+# These tests must be explicitly specified in the command line or the "allexplicit" command must be entered.
+# They will not be included in a normal "all tests" run.
 # Also include any interactive tests and anything with WIP in the description.
 $explicitTestKeys = (@("CheckHelp","ObsoleteCommands") + `
       ($Tests.GetEnumerator() | `
@@ -203,6 +204,10 @@ if ($allParameters -contains "help" -or $allParameters -contains "?") {
    showHelp
 } elseif ($allParameters -contains "showdata") {
    showData
+} elseif ($allParameters.Length -eq 0 -or $allParameters -contains "allexplicit") {
+   foreach ($t in $Tests.GetEnumerator()) {
+      $t.Value.runTest = iif ($explicitTestKeys -contains $t.Key) "Y" "N"
+   }
 } elseif ($allParameters.Length -eq 0 -or $allParameters -contains "all") {
    foreach ($t in $Tests.GetEnumerator()) {
       $t.Value.runTest = iif ($explicitTestKeys -contains $t.Key) "N" "Y"
@@ -227,10 +232,16 @@ if ($allParameters -contains "help" -or $allParameters -contains "?") {
    }
 }
 
+# If Manual is the only thing being run there's no need to go through anything else
+if ($Tests.Manual.runTest -eq "Y" -and ($Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"}).Count -eq 1) {
+   . "$SCRIPT_PATH\$($Tests.Manual.fileName)"
+   exit
+}
+
 write-host -NoNewLine "Running the following tests against "
 write-host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "Appliance=$($DATA.appliance), Others=[$($DATA.clusterReplicas -join ",")], User=$($DATA.userName), TestBranch=$testBranch"
 foreach ($t in ($Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"} | Sort {$_.Value.Seq})) {
-   write-host "   $($t.Key) $(iif ($t.Value.inter -eq "Y") " - May require human interaction" '')"
+   write-host "   $($t.Key) $(iif ($t.Value.inter -eq "Y") ' - May require human interaction' '')$(iif ($t.Value.description -match "WIP") ' - WIP. May not do much yet.' '')"
 }
 pause
 
@@ -239,7 +250,7 @@ try {
       startTranscribing
    }
 
-   $fullRunInfo = testBlockHeader "begin" "All Test Blocks"
+   $fullRunInfo = testBlockHeader "All Test Blocks"
 
    sgConnect
    goodResult "Connect-Safeguard" "Success"
@@ -280,7 +291,7 @@ catch {
 finally {
    Disconnect-Safeguard
 
-   testBlockHeader "end" "All Test Blocks`nFinal Tally" $fullRunInfo 
+   testBlockHeader "All Test Blocks`nFinal Tally" $fullRunInfo 
    if ($resultCounts.Bad -gt 0) {
       Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "===== Collected Errors ====="
       $collectedErrors | Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back

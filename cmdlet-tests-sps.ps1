@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running SPS Cluster Management Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # N.B. Some cluster calls are covered in the "noparameters" test
 # ===== Covered Commands =====
 # Get-SafeguardSessionCluster
@@ -90,5 +90,5 @@ try {
    #try { Remove-SafeguardDirectory -DirectoryToDelete $domainname > $null } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo
 

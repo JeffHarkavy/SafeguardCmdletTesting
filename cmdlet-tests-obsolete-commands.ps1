@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName = "Running Obsolete Commands"
-$blockInfo = testBlockHeader "begin" $TestBlockName 
+$blockInfo = testBlockHeader $TestBlockName 
 # ===== Covered Commands =====
 # Add-SafeguardSessionSshAlgorithm
 # Get-SafeguardSessionCertificate
@@ -99,4 +99,4 @@ catch {
    else { goodResult "Reset-SafeguardSessionModule" "Success" }
 }
 
-testBlockHeader "end" $TestBlockName  $blockInfo
+testBlockHeader $TestBlockName  $blockInfo

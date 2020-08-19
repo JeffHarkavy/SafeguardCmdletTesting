@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Assets, Accounts, and Groups Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName 24
+$blockInfo = testBlockHeader $TestBlockName 24
 # ===== Covered Commands =====
 # Add-SafeguardAccountGroupMember
 # Add-SafeguardAssetGroupMember
@@ -281,4 +281,4 @@ try {
    try { Remove-SafeguardAccountGroup -GroupToDelete "$($DATA.accountGroupName)" > $null } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

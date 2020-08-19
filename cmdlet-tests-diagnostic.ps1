@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running Diagnostic Package Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # TODO - stubbed code
 # Clear-SafeguardDiagnosticPackage
 # Get-SafeguardDiagnosticPackage
@@ -24,5 +24,5 @@ try {
 #try { if ($directoryAdded -eq 1) { Remove-SafeguardDirectory -DirectoryToDelete $domainname > $null } } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo
 

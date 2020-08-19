@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running Cluster Management Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # N.B. Some cluster calls are covered in the "noparameters" test
 #
 # ===== Covered Commands =====
@@ -123,5 +123,5 @@ try {
    #try { Remove-SafeguardDirectory -DirectoryToDelete $domainname > $null } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo
 

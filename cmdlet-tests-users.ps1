@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName = "Running Users Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName 9
+$blockInfo = testBlockHeader $TestBlockName 9
 # ===== Covered Commands =====
 # Disable-SafeguardUser
 # Edit-SafeguardUser
@@ -54,4 +54,4 @@ try {
    try { Remove-SafeguardUser -UserToDelete $DATA.renamedUsername > $null } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

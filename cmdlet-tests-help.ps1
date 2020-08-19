@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName ="Check Help Function for all commands"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # Runs all commands with a -? parameter and looks for output.
 # Will only complain if a given command doesn't return some help.
 # Note that it's not really picky about *what's* returned, just as
@@ -30,4 +30,4 @@ try {
 } catch {
    badResult "Help general" "Unexpected error checking help output" $_
 }
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

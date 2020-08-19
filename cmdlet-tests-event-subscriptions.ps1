@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Event Subscription Creation Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Edit-SafeguardEventSubscription
 # Find-SafeguardAsset
@@ -58,4 +58,4 @@ try {
    try { if ($removeAsset) {Remove-SafeguardAsset -AssetToDelete $DATA.assetName > $null} } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

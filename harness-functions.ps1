@@ -1,4 +1,7 @@
-﻿$bgcolor = (get-host).ui.rawui.backgroundcolor
+﻿# ############################################################################
+# You may need to change these based on your shell color settings
+# ############################################################################
+$bgcolor = (get-host).ui.rawui.backgroundcolor
 $COLORS = @{
    info      = @{back="$bgcolor"; fore="DarkBlue";};
    bad       = @{back="$bgcolor"; fore="Red";};
@@ -6,16 +9,23 @@ $COLORS = @{
    highlight = @{back="$bgcolor"; fore="DarkRed";};
 }
 
+# Maybe someday ps will get the ternary operator, but until then...
 Function iif($If, $Right, $Wrong) { If ($If) {$Right} Else {$Wrong} }
 
-# Writes begin/end blocks for groups of tests
+# Writes begin/end header blocks for groups of tests
+#
+# $hdrText             - Some type of descriptive text to include, typically the name
+#                        of the block of tests
 # $startInfo is null   - indicates a BEGIN block will be written and
 #                        $startInfo object will be created and returned
 # $startInfo is Int    - Same as null, indicates begin of test block and
 #                        indicates the number of expected tests
 # $startInfo is object - pass the startInfo block back to indicate END of
 #                        the test block
-function testBlockHeader($startOrEnd,$hdrText,$startInfo) {
+#
+# returns - for a "begin" header it returns a startInfo object which must
+#           be passed in when writing the "end" header
+function testBlockHeader($hdrText,$startInfo) {
    $time = get-date
    $newInfo = $null
    if ($null -eq $startInfo -or $startInfo.GetType().Name -eq "Int32") {
@@ -26,13 +36,13 @@ function testBlockHeader($startOrEnd,$hdrText,$startInfo) {
          expected = $startInfo;
       }
       $doReturn = $true
-      $startOrEnd = "BEGIN"
+      $beginOrEnd = "BEGIN"
    } else {
-      $startOrEnd = "END"
+      $beginOrEnd = "END"
    }
    $blockline = "+==========================================================================+"
    $fmt = "| {0,-" + ($blockline.Length - 3) + "}|"
-   $hdrText = "$startorEnd $hdrText"
+   $hdrText = "$beginOrEnd $hdrText"
    $stamp = "{0:MM}-{0:dd}-{0:yyyy} {0:HH}:{0:mm}:{0:ss}.{0:fff}" -f ($time)
    write-host ""
    write-host $blockline
@@ -44,7 +54,7 @@ function testBlockHeader($startOrEnd,$hdrText,$startInfo) {
    if ($newInfo.expected) {
      write-host -ForegroundColor $COLORS.info.fore -BackgroundColor $COLORS.good.back ("$fmt" -f ("Expected: $($newInfo.expected)"))
    }
-   if ('end' -eq $startOrEnd) {
+   if ('end' -eq $beginOrEnd) {
       $span = New-Timespan -Start $startInfo.startTime -End $time
       write-host ("$fmt" -f ("Elapsed: $($span.TotalSeconds) seconds"))
       if ($startInfo.expected) {
@@ -58,6 +68,7 @@ function testBlockHeader($startOrEnd,$hdrText,$startInfo) {
    if ($doReturn) {return $newInfo}
 }
 
+# simpler header used to flag some individual tests
 function writeCallHeader($cmd) {
    write-host "`n--------------------------------------------------"
    foreach ($l in $cmd.Split([Environment]::NewLine)) {
@@ -66,6 +77,11 @@ function writeCallHeader($cmd) {
    write-host "--------------------------------------------------"
 }
 
+# good/info/bad result writers
+# $cmd - command / test name
+# $str - extra information
+# $ex  - optional exception that was thrown for an error situation.
+#        Will pull script line number and message for output
 function goodResult($cmd, $str) {
    Write-Host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back "$($cmd) : $($str)"
    $resultCounts.Good++
@@ -91,15 +107,29 @@ function showHelp {
 --- Running Selected or All tests ---
   - Invoke with argument of showdata to see current values used across all tests
   - Invoke with no arguments or the single argument all to run all commands.
-  - Tests marked with MUST SPECIFY SEPARATELY are not included in the ""all commands"" run.
+  - Some tests are not included in the ""all commands"" run and must be specifically requested.
+    These tests can be run individually or pass ""allexplicit"" to run all of them at once.
   - Invoke with a space-delimited list of test names to run individual tests.
     Test names do not have to be exact, but must be non-ambiguous.
   - Pass LTS or Feature to change test targets. Tests LTS branch by default.
   - Pass Log or NoLog to turn transcript logging on or off (default is Off)
 
   Valid test names are (in order of execution): "
-  (($Tests.GetEnumerator() | Sort {$_.Value.Seq})) | `
-     foreach-object { Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($explicitTestKeys -contains $_.Key) " MUST SPECIFY SEPARATELY." ""))}
+  (($Tests.GetEnumerator() | Where-Object {$explicitTestKeys -notcontains $_.Key}) | Sort {$_.Value.Seq}) | `
+     foreach-object { 
+        Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back `
+        ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($_.Value.inter -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" ""))
+     }
+  Write-Host ""
+  Write-Host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back "  The following tests must be individually requested or ""allexplicit"" must be specified:"
+  (($Tests.GetEnumerator() | Where-Object {$explicitTestKeys -contains $_.Key}) | Sort {$_.Value.Seq}) | `
+     foreach-object { 
+        Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back `
+        ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($_.Value.inter -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" ""))
+     }
+  Write-Host ""
+  Write-Host "    (1) - Test may require human interaction."
+  Write-Host "    (2) - Work-In-Progress. May not do much yet."
   Write-Host ""
 
   exit
@@ -120,7 +150,7 @@ function showData {
       if ($tname -ieq "hashtable") {
          # break out the pieces of the hashtable. no, it's not recursive so if
          # the hash has another hash or an array ... tough.
-         Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back ("@{{$($spacing){0}$spacing}}" -f (($k.Value.Keys|foreach {"${_}: $($k.Value[$_])"}) -join ";$spacing"))
+         Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back ("@{{$($spacing)  {0};$spacing}}" -f (($k.Value.Keys|foreach {"${_}: $($k.Value[$_])"}) -join ";$spacing  "))
       } elseif ($tname -match "\[\]$") {
          # join the members of the array in a CSV list inside brackets
          Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back ('[{0}]' -f ($k.Value -join ', '))
@@ -154,7 +184,7 @@ function createUser($uname) {
    return $user
 }
 
-# Not strictly necessary, but makes working from the command line a little easier
+# Not strictly necessary, but it does make working from the command line a little easier
 function sgConnect($appliance,$getToken) {
    $appliance = iif ($null -eq $appliance) $DATA.appliance $appliance
    if ($getToken) {
@@ -189,11 +219,11 @@ function setTestBranch($branch) {
    return $DATA.appliance
 }
 
-function formatSgVersion($v,$inclBuild) {
+function formatSgVersion($v,$includeBuild) {
    return $v.Major.toString() + "." + `
           $v.Minor.toString() + "." + `
           (iif $v.ServicePack $v.ServicePack $v.Revision).toString() + `
-          (iif $inclBuild ("." + (iif $v.HotfixLevel $v.HotfixLevel $v.Build).toString()) "");
+          (iif $includeBuild ("." + (iif $v.HotfixLevel $v.HotfixLevel $v.Build).toString()) "");
 }
 
 function startTranscribing {

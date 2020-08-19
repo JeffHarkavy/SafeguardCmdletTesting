@@ -5,6 +5,13 @@
 # MAKE SURE ALL IP ADDRESSES, SYSTEM/ACCOUNT/USER NAMES AND PASSWORDS ARE
 # UPDATED TO REFLECT YOUR ENVIRONMENT
 # ############################################################################
+#
+# Normally the script path is set in the safeguard-cmdlet-testing script, but I've
+# found that dot-sourcing this file from the command line can make it easier to do
+# hand-testing. Ergo, if the variable isn't populated yet then set it to the cwd.
+# 
+$SCRIPT_PATH = if($SCRIPT_PATH) {$SCRIPT_PATH} else {(Get-Location).Path}
+
 $DATA = @{
    #addresses of LTS and Feature branch appliances
    applianceLTS = "10.9.4.222";

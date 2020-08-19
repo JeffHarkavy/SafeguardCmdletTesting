@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running Entitlement and Access Policy Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # TODO - stubbed code
 # Get-SafeguardAccessPolicySessionProperty
 
@@ -119,5 +119,5 @@ try {
    try { Remove-SafeguardAsset -AssetToDelete "$($DATA.assetName)" > $null } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo
 

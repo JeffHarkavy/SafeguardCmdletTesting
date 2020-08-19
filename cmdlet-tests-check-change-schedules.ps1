@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Check and Change Schedule Creation Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Copy-SafeguardPasswordChangeSchedule
 # Copy-SafeguardPasswordCheckSchedule
@@ -69,4 +69,4 @@ try {
    try { Remove-SafeguardPasswordCheckSchedule -CheckScheduleToDelete "$copyCheckScheduleName" > $null } catch { }
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

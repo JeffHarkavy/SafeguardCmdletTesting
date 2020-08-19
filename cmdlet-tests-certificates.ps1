@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running Certificates Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # TODO - stubbed code
 # Clear-SafeguardSslCertificateForAppliance
 # Install-SafeguardAuditLogSigningCertificate
@@ -87,4 +87,4 @@ try {
    try { if ($csr) { Remove-SafeguardCsr -Thumbprint $csr.Thumbprint > $null } } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

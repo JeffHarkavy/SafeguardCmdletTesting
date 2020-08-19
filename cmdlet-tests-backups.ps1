@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Backups Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # === COVERED COMMANDS ===
 # Get-SafeguardBackup
 # Export-SafeguardBackup
@@ -113,4 +113,4 @@ try {
 } finally {
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

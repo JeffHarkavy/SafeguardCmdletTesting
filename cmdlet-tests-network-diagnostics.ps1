@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Networking Diagnostics Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Invoke-SafeguardClusterPing
 # Invoke-SafeguardClusterThroughput
@@ -54,4 +54,4 @@ try {
 catch {
    badResult "Network Diagnostics general" "Unexpected error testing network diagnostic commands - $_.Message"
 }
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

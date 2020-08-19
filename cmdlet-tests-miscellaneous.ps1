@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Miscellaneous Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # TODO - stubbed code
 #Enable-SafeguardBmcConfiguration - !$isVm
 #Set-SafeguardBmcAdminPassword - !$isVm
@@ -37,18 +37,6 @@ $blockInfo = testBlockHeader "begin" $TestBlockName
 # Update-SafeguardAccessToken
 # Wait-SafeguardApplianceStateOnline
 #
-# === "Covered" but must be done manually ===
-# Open-CsvInExcel
-# Get-SafeguardSupportBundle
-# Install-SafeguardDesktopClient
-# Invoke-SafeguardApplianceFactoryReset
-# Invoke-SafeguardApplianceReboot
-# Invoke-SafeguardApplianceShutdown
-# Update-SafeguardAccessToken
-# Enable-SafeguardTls12Only
-# Disable-SafeguardTls12Only
-# New-SafeguardTestCertificatePki
-# Repair-SafeguardSessionModule
 
 try {
    $output = Invoke-SafeguardMethod Core POST ReasonCodes -Body @{ Name = "RN12345"; Description = "Routine maintenance." }
@@ -155,17 +143,4 @@ try {
    if ($archiveServer.Id) { try{Remove-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id > $null} catch{} }
 }
 
-writeCallHeader "Make sure to run the following as manual tests`nuser interaction or reboots or other stuff required"
-infoResult "Open-CsvInExcel -FilePath foo-bar.csv" "Best to run manually on a known CSV when Excel is known to be present"
-infoResult "Get-SafeguardSupportBundle -OutFile somefilename" "This can take a long time to process, so probably best to do manually"
-infoResult "Install-SafeguardDesktopClient" "not really a script-y kind of thing to do, requires user interaction"
-infoResult "Invoke-SafeguardApplianceFactoryReset -Reason ""Give a reason here""" " --- VM Only - beware!"
-infoResult "Invoke-SafeguardApplianceReboot -Reason ""Give a reason here"""
-infoResult "Invoke-SafeguardApplianceShutdown -Reason ""Give a reason here"""
-infoResult "Update-SafeguardAccessToken" "requires user interaction"
-infoResult "Enable-SafeguardTls12Only" "requires user interaction, use Get-SafeguardTls12OnlyStatus to see the current setting"
-infoResult "Disable-SafeguardTls12Only" "requires user interaction, use Get-SafeguardTls12OnlyStatus to see the current setting"
-infoResult "New-SafeguardTestCertificatePki -SubjectBaseDn ""OU=cmdletTesting,O=OneIdentityLLC,C=US"" -OutputDir ." "requires LOTS of user interaction"
-infoResult "Repair-SafeguardSessionModule" "requires user interaction. Obsolete."
-
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

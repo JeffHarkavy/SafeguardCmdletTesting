@@ -5,7 +5,7 @@ try {
    exit
 }
 $TestBlockName = "Running Patch Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Clear-SafeguardPatch
 # Get-SafeguardPatch
@@ -127,5 +127,5 @@ try {
    try { Clear-SafeguardPatch > $null } catch {}
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo
 
