@@ -13,16 +13,17 @@ $knownVMTypes = @('vmware','hyperv')
 # load up the harness functions
 . "$SCRIPT_PATH\harness-functions.ps1"
 
-$testBranch = "LTS"
+# some pre-processing of the command line to find stuff not directly test-related
 if ($allParameters -contains "all" -and $allParameters -contains "allexplicit") {
-   Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back "ALLEXPLICIT takes precedence over ALL. Only the former will be run."
+   Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back "ALLEXPLICIT takes precedence over ALL. Only ALLEXPLICIT will be run."
 }
+
+$testBranch = "LTS"
 if ($allParameters -contains "lts" -and $allParameters -contains "feature") {
    Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "Can not specify both LTS and Feature"
    exit
 } elseif ($allParameters -contains "lts" -or $allParameters -contains "feature") {
    $testBranch = iif ($allParameters -contains "lts") "LTS" "Feature"
-   $allParameters = @($allParameters | Where-Object { $_ -ne "LTS" -and $_ -ne "Feature" })
 }
 setTestBranch $testBranch > $null
 
@@ -31,7 +32,7 @@ if ($allParameters -contains "log") {
 } elseif ($allParameters -contains "nolog") {
    $DATA.createLog = $false
 }
-$allParameters = @($allParameters | Where-Object { $_ -ne "log" -and $_ -ne "nolog" })
+$allParameters = @($allParameters | Where-Object { @("log","nolog","lts","feature") -notcontains $_ })
 
 # List of tests that can be run (ok... hashmap)
 #    Seq = order in which test will be run if > 1 test is specified
@@ -160,6 +161,11 @@ $Tests = @{
       fileName = "cmdlet-tests-patch.ps1";
       description="Tests patching commands.";
    };
+   Settings = @{
+      Seq=25; runTest = "N"; inter="N";
+      fileName = "cmdlet-tests-settings.ps1";
+      description="Tests Settings commands (no LTS tests).";
+   };
    # Somebody has to be last, why not these 2?
    Manual = @{
       Seq=97; runTest = "N"; inter="Y";
@@ -201,8 +207,10 @@ $resultCounts = @{
 
 # Process the command line and either show help or set the list of tests to run
 if ($allParameters -contains "help" -or $allParameters -contains "?") {
+   # command will exit after doing its thing
    showHelp
 } elseif ($allParameters -contains "showdata") {
+   # ditto
    showData
 } elseif ($allParameters.Length -eq 0 -or $allParameters -contains "allexplicit") {
    foreach ($t in $Tests.GetEnumerator()) {
@@ -213,6 +221,10 @@ if ($allParameters -contains "help" -or $allParameters -contains "?") {
       $t.Value.runTest = iif ($explicitTestKeys -contains $t.Key) "N" "Y"
    }
 } else {
+   # Try to find commands based on a partial match of what they entered vs. the
+   # beginning of the test name, but make sure it only matches one command e.g.,
+   # "misc" will find only "Miscellaneous" but "asset" finds both
+   # "AssetsAndAccounts" and "AssetPartition".
    foreach ($p in $allParameters) {
       $matches = ($Tests.Keys -match "^$p")
       if ($Tests.Keys -contains $p) {
@@ -238,6 +250,8 @@ if ($Tests.Manual.runTest -eq "Y" -and ($Tests.GetEnumerator() | Where-Object {$
    exit
 }
 
+# Show the user the tests that are about to be run and give them
+# one last chance to bail
 write-host -NoNewLine "Running the following tests against "
 write-host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "Appliance=$($DATA.appliance), Others=[$($DATA.clusterReplicas -join ",")], User=$($DATA.userName), TestBranch=$testBranch"
 foreach ($t in ($Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"} | Sort {$_.Value.Seq})) {
@@ -260,16 +274,17 @@ try {
    goodResult "Get-SafeguardVersion" "Success"
    $sgVersion | format-table
 
-   # Make sure to add any other known "vm" types
    $isVm = $knownVMTypes -contains $sgVersion.BuildPlatform
    $isLTS = $sgVersion.Minor -eq "0"
+
    writeCallHeader "Appliance Info"
    infoResult "isVm" $isVm
    infoResult "isLTS" $isLTS
    if ($isLTS -and $testBranch -eq "Feature" -and $Tests.Patch.runTest -eq "Y") {
       infoResult "Test Branch Check" "This is an LTS appliance. Do you want to patch it to a Feature build?"
       if ("Y" -ne (Read-Host "Enter Y to continue with patch tests on $($DATA.appliance)")) {
-         exit
+         $Tests.Patch.runTest = "N"
+         infoResult "Patch Testing" "Skipping patch testing from LTS to Feature"
       }
    } elseif (($isLTS -and $testBranch -ne "LTS") -or (-not $isLTS -and $testBranch -ne "Feature")) {
       badResult "Test Branch Mismatch" "This is a $(iif $isLTS "LTS" "Feature") appliance and TestBranch is set to $testBranch"

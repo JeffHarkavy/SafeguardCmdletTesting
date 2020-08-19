@@ -36,6 +36,12 @@ $blockInfo = testBlockHeader $TestBlockName 24
 # Get-SafeguardDynamicAssetGroup
 # New-SafeguardDynamicAccountGroup
 # New-SafeguardDynamicAssetGroup
+# Get-SafeguardDeletedAsset
+# Get-SafeguardDeletedAssetAccount
+# Remove-SafeguardDeletedAsset
+# Remove-SafeguardDeletedAssetAccount
+# Restore-SafeguardDeletedAsset
+# Restore-SafeguardDeletedAssetAccount
 # 
 
 try {
@@ -261,9 +267,14 @@ try {
             throw $_.Exception
          }
       }
-       # This currently errors out
-      #$dynoAccountGroup = Edit-SafeguardDynamicAccountGroup -GroupToGet "$dynoAccountGroupName" -Description "Edited Description for $dynoAccountGroupName" -GroupingRule "$($DATA.dynamicAccountGroupRule)"
-      #goodResult "Edit-SafeguardDynamicAccountGroup" "Successfully edited $dynoAccountGroupName Description='$($dynoAccountGroup.Description)'"
+
+      # This currently errors out, so catch it separately for now but don't propagate the exception
+      try {
+         $dynoAccountGroup = Edit-SafeguardDynamicAccountGroup -GroupToGet "$dynoAccountGroupName" -Description "Edited Description for $dynoAccountGroupName" -GroupingRule "$($DATA.dynamicAccountGroupRule)"
+         goodResult "Edit-SafeguardDynamicAccountGroup" "Successfully edited $dynoAccountGroupName Description='$($dynoAccountGroup.Description)'"
+      } catch {
+         badResult "Edit-SafeguardDynamicAccountGroup" "Failed $dynoAccountGroupName" $_
+      }
 
       infoResult "Get-SafeguardAccountGroupMember" "Dynamic Account Group $dynoAccountGroupName members"
       Get-SafeguardAccountGroupMember -Group $dynoAccountGroupName | Format-Table
@@ -272,6 +283,61 @@ try {
    } finally {
       Remove-SafeguardAccountGroup -GroupToDelete "$dynoAccountGroupName" > $null
       goodResult "Remove-SafeguardAccountGroup" "Successfully removed $dynoAccountGroupName"
+   }
+
+   # create a assets and accounts to delete, restore, and remove
+   $delResAsset = New-SafeguardAsset -DisplayName "delres_$($DATA.assetName)" -Platform $DATA.assetPlatform -NetworkAddress $DATA.assetIpAddress `
+      -ServiceAccountCredentialType Password -ServiceAccountName $DATA.assetServiceAccount -ServiceAccountPassword $DATA.assetServiceAccountPassword `
+      -AcceptSshHostKey
+   $delResAccount = New-SafeguardAssetAccount -ParentAsset $delResAsset.Name -NewAccountName "delres_account"
+   Remove-SafeguardAssetAccount -AccountToDelete $delResAccount.Id > $null
+   infoResult "Deleted Account" "Successfully created and deleted account for testing Id=$($delResAccount.Id) Name=$($delResAsset.Name)\$($delResAccount.Name)"
+
+   try {
+      $delAssetAccountList = (Get-SafeguardDeletedAssetAccount) | Where-Object {$_.Name -ieq "$($delResAccount.Name)"}
+      goodResult "Get-SafeguardDeletedAssetAccount" "Successfully retrieved $($delAssetAccountList.Count) deleted accounts"
+   } catch {
+      badResult "Get-SafeguardDeletedAssetAccount" "Failed to retrieve deleted account $($delResAccount.Name)"
+   }
+
+   try {
+      $restored = Restore-SafeguardDeletedAssetAccount -AccountToRestore $delResAccount.Id
+      goodResult "Restore-SafeguardDeletedAssetAccount" "Successfully restored deleted account Id=$($delResAccount.Id) Name=$($delResAsset.Name)\$($restored.Name), new Id=$($restored.Id)"
+   } catch {
+      badResult "Restore-SafeguardDeletedAssetAccount" "Failed to restore deleted user $($delResAccount.Name)"
+   }
+
+   try {
+      Remove-SafeguardAssetAccount -AccountToDelete $restored.Id > $null
+      Remove-SafeguardDeletedAssetAccount -AccountToDelete $restored.Id > $null
+      goodResult "Remove-SafeguardDeletedAssetAccount" "Successfully purged deleted account Id=$($restored.Id) Name=$($delResAsset.Name)\$($restored.Name)"
+   } catch {
+      badResult "Remove-SafeguardDeletedAssetAccount" "Failed to purge deleted user Id=$($restored.Id) $($delResAsset.Name)\$($restored.Name)"
+   }
+
+   Remove-SafeguardAsset $delResAsset.Name > $null
+   infoResult "Deleted Asset" "Successfully created and deleted asset for testing Id=$($delResAsset.Id) Name=$($delResAsset.Name)"
+
+   try {
+      $delAssetList = (Get-SafeguardDeletedAsset) | Where-Object {$_.Name -ieq "$($delResAsset.Name)"}
+      goodResult "Get-SafeguardDeletedAsset" "Successfully retrieved $($delAssetList.Count) deleted users"
+   } catch {
+      badResult "Get-SafeguardDeletedAsset" "Failed to retrieve deleted user $($delResAsset.Name)"
+   }
+
+   try {
+      $restored = Restore-SafeguardDeletedAsset -AssetToRestore $delResAsset.Id
+      goodResult "Restore-SafeguardDeletedAsset" "Successfully restored deleted user Id=$($delResAsset.Id) Name=$($restored.Name), new Id=$($restored.Id)"
+   } catch {
+      badResult "Restore-SafeguardDeletedAsset" "Failed to restore deleted user $($delResAsset.Name)"
+   }
+
+   try {
+      Remove-SafeguardAsset $restored.Id > $null
+      Remove-SafeguardDeletedAsset -AssetToDelete $restored.Id > $null
+      goodResult "Remove-SafeguardDeletedAsset" "Successfully purged deleted user Id=$($restored.Id) Name=$($restored.Name)"
+   } catch {
+      badResult "Remove-SafeguardDeletedAsset" "Failed to purge deleted user Id=$($restored.Id) $($delResAsset.Name)"
    }
 } catch {
    badResult "Assets and Accounts general" "Unexpected error in Assets, Accounts, and Groups tests" $_

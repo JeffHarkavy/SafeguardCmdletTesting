@@ -89,6 +89,8 @@ $commands = @{
    DisableSafeguardBmcConfiguration =               @{cmdName = "Disable-SafeguardBmcConfiguration"; onVm=$false;};
    GetSafeguardEventProperty =                      @{cmdName = "Get-SafeguardEventProperty"; onLTS=$false; cmd = "Get-SafeguardEventProperty AssetCreated"};
    FindSafeguardEvent =                             @{cmdName = "Find-SafeguardEvent"; onLTS=$false; cmd = "(Find-SafeguardEvent req) | select -Property Name,DisplayName -First $DEFAULT_MAXROWS"; pipe = "format-table";};
+   DisableSafeguardTlsLogging =                     @{cmdName = "Disable-SafeguardTlsLogging"; onLTS=$false;};
+   EnableSafeguardTlsLogging =                      @{cmdName = "Enable-SafeguardTlsLogging"; onLTS=$false;};
 }
 
 try {

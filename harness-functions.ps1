@@ -168,7 +168,7 @@ function showData {
 # Assumes connect has already been done.
 function createUser($uname) {
    try {
-      $user = Find-SafeguardUser $uname
+      $user = Find-SafeguardUser -QueryFilter "UserName ieq '$uname'"
       if ($user) {
          infoResult "Find-SafeguardUser" "$($user.UserName) already exists"
       } else {

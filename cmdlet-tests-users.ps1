@@ -15,6 +15,10 @@ $blockInfo = testBlockHeader $TestBlockName 9
 # New-SafeguardUser
 # Rename-SafeguardUser
 # Set-SafeguardUserPassword
+# Get-SafeguardDeletedUser
+# Remove-SafeguardDeletedUser
+# Restore-SafeguardDeletedUser
+
 #
 try {
    # this will throw an exception if the user can not be found or created
@@ -47,11 +51,39 @@ try {
    $foundUser = Find-SafeguardUser $Data.userUserName
    if ($foundUser) { goodResult "Find-SafeguardUser" "found $($Data.userUserName)" }
    else { badResult "Find-SafeguardUser" "DID NOT find $($Data.userUserName)" }
+
+   # create a user to delete, restore, and remove
+   $delResUser = createUser "delres_$($DATA.userUsername)"
+   Remove-SafeguardUser $delResUser.UserName > $null
+   infoResult "Deleted User" "Successfully created and deleted user for testing Id=$($delResUser.Id) Name=$($delResUser.UserName)"
+
+   try {
+      $delUserList = (Get-SafeguardDeletedUser) | Where-Object {$_.UserName -ieq "$($delResUser.UserName)"}
+      goodResult "Get-SafeguardDeletedUser" "Successfully retrieved $($delUserList.Count) deleted users"
+   } catch {
+      badResult "Get-SafeguardDeletedUser" "Failed to retrieve deleted user $($delResUser.UserName)"
+   }
+
+   try {
+      $restored = Restore-SafeguardDeletedUser -UserToRestore $delResUser.Id
+      goodResult "Restore-SafeguardDeletedUser" "Successfully restored deleted user Id=$($delResUser.Id) Name=$($restored.UserName), new Id=$($restored.Id)"
+   } catch {
+      badResult "Restore-SafeguardDeletedUser" "Failed to restore deleted user $($delResUser.UserName)"
+   }
+
+   try {
+      Remove-SafeguardUser $restored.Id > $null
+      Remove-SafeguardDeletedUser -UserToDelete $restored.Id > $null
+      goodResult "Remove-SafeguardDeletedUser" "Successfully purged deleted user Id=$($restored.Id) Name=$($restored.UserName)"
+   } catch {
+      badResult "Remove-SafeguardDeletedUser" "Failed to purge deleted user Id=$($restored.Id) $($delResUser.UserName)"
+   }
 } catch {
       badResult "Users general" "Unexpected error in Users test" $_
 } finally {
    try { Remove-SafeguardUser -UserToDelete $DATA.userUsername > $null } catch {}
    try { Remove-SafeguardUser -UserToDelete $DATA.renamedUsername > $null } catch {}
+   if ($delResUser) { try { Remove-SafeguardUser -UserToDelete $delResUser > $null } catch {} }
 }
 
 testBlockHeader $TestBlockName $blockInfo

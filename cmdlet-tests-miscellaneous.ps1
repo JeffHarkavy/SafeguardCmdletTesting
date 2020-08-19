@@ -36,6 +36,10 @@ $blockInfo = testBlockHeader $TestBlockName
 # Uninstall-SafeguardLicense
 # Update-SafeguardAccessToken
 # Wait-SafeguardApplianceStateOnline
+# Edit-SafeguardSyslogServer
+# Get-SafeguardSyslogServer
+# New-SafeguardSyslogServer
+# Remove-SafeguardSyslogServer
 #
 
 try {
@@ -141,6 +145,25 @@ try {
    badResult "Archive Server general" "Unexpected error in Archive Server tests" $_
 } finally {
    if ($archiveServer.Id) { try{Remove-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id > $null} catch{} }
+}
+
+try {
+   $syslogList = Get-SafeguardSyslogServer
+   goodResult "Get-SafeguardSyslogServer" "Successfully retrieved $($syslogList.Count) syslog servers"
+
+   $newsyslog = New-SafeguardSyslogServer -NetworkAddress "1.2.3.4" -Name "fred"
+   goodResult "New-SafeguardSyslogServer" "Successfully created SyslogServer Id=$($newsyslog.Id) Name=$($newSyslog.Name)"
+
+   $newSyslog.Name = "Son of Fred"
+   $editedSyslog = Edit-SafeguardSyslogServer -SysLogServer $newSyslog
+   goodResult "Get-SafeguardSyslogServer" "Successfully edited Id=$($editedSyslog.Id) Name=$($editedSyslog.Name)"
+
+   Remove-SafeguardSyslogServer -ServerToRemove $editedSyslog.Id > $null
+   goodResult "Remove-SafeguardSyslogServer" "Successfully removed Id=$($editedSyslog.Id) Name=$($editedSyslog.Name)"
+} catch {
+   badResult "SysLog Server general" "Unexpected error in SysLog Server tests" $_
+} finally {
+   if ($newsyslog.Id) { try{Remove-SafeguardSyslogServer -ServerToRemove $newsyslog.Id > $null} catch{} }
 }
 
 testBlockHeader $TestBlockName $blockInfo
