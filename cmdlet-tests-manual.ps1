@@ -24,7 +24,6 @@ function quickBlock($cmd,$desc) {
 # Enable-SafeguardTls12Only
 # Disable-SafeguardTls12Only
 # New-SafeguardTestCertificatePki
-# Repair-SafeguardSessionModule
 
 quickBlock "Open-CsvInExcel -FilePath foo-bar.csv" "Best to run manually on a known CSV when Excel is known to be present"
 
@@ -45,8 +44,6 @@ quickBlock "Enable-SafeguardTls12Only" "requires user interaction, use Get-Safeg
 quickBlock "Disable-SafeguardTls12Only" "requires user interaction, use Get-SafeguardTls12OnlyStatus to see the current setting"
 
 quickBlock "New-SafeguardTestCertificatePki -SubjectBaseDn ""OU=cmdletTesting,O=OneIdentityLLC,C=US"" -OutputDir ." "requires LOTS of user interaction. HINT - put your password in the clipboard. Ctrl-V is your friend."
-
-quickBlock "Repair-SafeguardSessionModule" "requires user interaction. Obsolete."
 
 testBlockHeader $TestBlockName $blockInfo
 

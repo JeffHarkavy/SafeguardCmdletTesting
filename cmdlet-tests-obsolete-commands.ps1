@@ -18,85 +18,45 @@ $blockInfo = testBlockHeader $TestBlockName
 # Remove-SafeguardSessionSshAlgorithm
 # Reset-SafeguardSessionModule
 # Set-SafeguardSessionSshAlgorithms
+# Repair-SafeguardSessionModule
 #
+
+function testObsolete($cmd, $extraArgs1) {
+   $cmd = "$cmd $(iif $extraArgs1 $extraArgs1 '')  -ErrorAction:SilentlyContinue -WarningAction:Continue"
+   writeCallHeader "$cmd OBSOLETE"
+   try { Invoke-Expression $cmd }
+   catch {
+      if ($_.Exception.ErrorCode -ne 60385) { badResult "$cmd" "Unexpected error" $_ }
+      else { goodResult "$cmd" "Success" }
+   }
+}
 
 # All of the following commands are *expected* to be obsolete and should only spit out
 # a Warning (or 2) about that. If any other error comes out we'll squawk
-writeCallHeader "Add-SafeguardSessionSshAlgorithm OBSOLETE"
-try { Add-SafeguardSessionSshAlgorithm ServerSide Cipher 3des-cbc -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Add-SafeguardSessionSshAlgorithm" "Unexpected error" $_ }
-   else { goodResult "Add-SafeguardSessionSshAlgorithm" "Success" }
-}
+testObsolete "Add-SafeguardSessionSshAlgorithm" "ServerSide Cipher 3des-cbc"
 
-writeCallHeader "Get-SafeguardSessionCertificate OBSOLETE"
-try { Get-SafeguardSessionCertificate -Type TimeStamping -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Get-SafeguardSessionCertificate" "Unexpected error" $_ }
-   else { goodResult "Get-SafeguardSessionCertificate" "Success" }
-}
+testObsolete "Get-SafeguardSessionCertificate" "-Type TimeStamping"
 
-writeCallHeader "Get-SafeguardSessionContainerStatus OBSOLETE"
-try { Get-SafeguardSessionContainerStatus -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Get-SafeguardSessionContainerStatus" "Unexpected error" $_ }
-   else { goodResult "Get-SafeguardSessionContainerStatus" "Success" }
-}
+testObsolete "Get-SafeguardSessionContainerStatus"
 
-writeCallHeader "Get-SafeguardSessionModuleStatus OBSOLETE"
-try { Get-SafeguardSessionModuleStatus -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Get-SafeguardSessionModuleStatus" "Unexpected error" $_ }
-   else { goodResult "Get-SafeguardSessionModuleStatus" "Success" }
-}
+testObsolete "Get-SafeguardSessionModuleStatus"
 
-writeCallHeader "Get-SafeguardSessionModuleVersion OBSOLETE"
-try { Get-SafeguardSessionModuleVersion -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Get-SafeguardSessionModuleVersion" "Unexpected error" $_ }
-   else { goodResult "Get-SafeguardSessionModuleVersion" "Success" }
-}
+testObsolete "Get-SafeguardSessionModuleVersion"
 
-writeCallHeader "Get-SafeguardSessionSshAlgorithms OBSOLETE"
-try { Get-SafeguardSessionSshAlgorithms -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Get-SafeguardSessionSshAlgorithms" "Unexpected error" $_ }
-   else { goodResult "Get-SafeguardSessionSshAlgorithms" "Success" }
-}
+testObsolete "Get-SafeguardSessionSshAlgorithms"
 
-writeCallHeader "Invoke-SafeguardSessionsPing OBSOLETE"
-try { Invoke-SafeguardSessionsPing -NetworkAddress 10.9.6.79 -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Invoke-SafeguardSessionsPing" "Unexpected error" $_ }
-   else { goodResult "Invoke-SafeguardSessionsPing" "Success" }
-}
+testObsolete "Get-SafeguardSessionContainerStatus"
 
-writeCallHeader "Invoke-SafeguardSessionsTelnet OBSOLETE"
-try { Invoke-SafeguardSessionsTelnet -NetworkAddress 10.9.6.79 -Port 22 -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Invoke-SafeguardSessionsTelnet" "Unexpected error" $_ }
-   else { goodResult "Invoke-SafeguardSessionsTelnet" "Success" }
-}
+testObsolete "Invoke-SafeguardSessionsPing" "-NetworkAddress 10.9.6.79" 
 
-writeCallHeader "Set-SafeguardSessionSshAlgorithms OBSOLETE"
-try { Set-SafeguardSessionSshAlgorithms ServerSide Cipher -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Set-SafeguardSessionSshAlgorithms" "Unexpected error" $_ }
-   else { goodResult "Set-SafeguardSessionSshAlgorithms" "Success" }
-}
+testObsolete "Invoke-SafeguardSessionsTelnet" "-NetworkAddress 10.9.6.79 -Port 22" 
 
-writeCallHeader "Remove-SafeguardSessionSshAlgorithm OBSOLETE"
-try { Remove-SafeguardSessionSshAlgorithm ServerSide Cipher 3des-cbc -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Remove-SafeguardSessionSshAlgorithm" "Unexpected error" $_ }
-   else { goodResult "Remove-SafeguardSessionSshAlgorithm" "Success" }
-}
+testObsolete "Set-SafeguardSessionSshAlgorithms" "ServerSide Cipher" 
 
-writeCallHeader "Reset-SafeguardSessionModule OBSOLETE"
-try { Reset-SafeguardSessionModule -ErrorAction:SilentlyContinue -WarningAction:Continue }
-catch {
-   if ($_.Exception.ErrorCode -ne 60385) { badResult "Reset-SafeguardSessionModule" "Unexpected error" $_ }
-   else { goodResult "Reset-SafeguardSessionModule" "Success" }
-}
+testObsolete "Remove-SafeguardSessionSshAlgorithm" "ServerSide Cipher 3des-cbc" 
+
+testObsolete "Reset-SafeguardSessionModule"
+
+testObsolete "Repair-SafeguardSessionModule"
 
 testBlockHeader $TestBlockName  $blockInfo
