@@ -178,7 +178,7 @@ $Tests = @{
       description="All kinds of don't-fit-elsewhere type commands.";
    };
    ObsoleteCommands = @{
-      Seq=99; runTest = "N"; inter="N";
+      Seq=99; runTest = "N"; inter="Y";
       fileName = "cmdlet-tests-obsolete-commands.ps1";
       description="Test to make sure Obsolete commands return that they are, in fact, obsolete.";
    };
