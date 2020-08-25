@@ -1,11 +1,11 @@
 ﻿try {
    Get-Command "writeCallHeader" -ErrorAction Stop > $null
 } catch {
-   write-host "Not meant to be run as a standalone script" -ForegroundColor Red
+   write-host -ForegroundColor Red "Not meant to be run as a standalone script"
    exit
 }
 $TestBlockName = "Running Users Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName 9
 # ===== Covered Commands =====
 # Disable-SafeguardUser
 # Edit-SafeguardUser
@@ -15,55 +15,75 @@ $blockInfo = testBlockHeader "begin" $TestBlockName
 # New-SafeguardUser
 # Rename-SafeguardUser
 # Set-SafeguardUserPassword
+# Get-SafeguardDeletedUser
+# Remove-SafeguardDeletedUser
+# Restore-SafeguardDeletedUser
+
 #
 try {
-   try {
-      $newUser = Get-SafeguardUser -UserToGet $userUsername
-      infoResult "Get-SafeguardUser"  "$($newUser.UserName) already exists"
-   }
-   catch {
-      if ($_.Exception.Message -match "unable to find") {
-         $newUser = New-SafeguardUser -NewUserName $userUsername -FirstName "Safeguard-ps" -LastName "User" -NoPassword -Provider -1
-         goodResult "New-SafeguardUser"  "$($newUser.UserName) created"
-      }
-      else {
-         badResult "New-SafeguardUser"  "Unexpected error fetching $($newUser.UserName)" $_.Exception
-         throw $_.Exception
-      }
-   }
-   Set-SafeguardUserPassword -Password $secUserPassword -UserToEdit $userUsername > $null
-   goodResult "Set-SafeguardUserPassword"  "$($newUser.UserName) created"
-   $newUser = Edit-SafeguardUser -UserToEdit $userUsername -EmailAddress $userEmail
-   if (-not $newUser.EmailAddress.Contains($userEmail)) { badResult "Edit-SafeguardUser"  "Email address failed" }
-   else { goodResult "Edit-SafeguardUser"  "successfull changed email to $($newUser.EmailAddress)" }
+   # this will throw an exception if the user can not be found or created
+   $newUser = createUser $DATA.userUsername
+
+   $getuser = Get-SafeguardUser -UserToGet $DATA.userUsername
+   goodResult "Get-SafeguardUser" "Successfully got $($Data.userUserName)"
+
+   Set-SafeguardUserPassword -Password $DATA.secUserPassword -UserToEdit $DATA.userUsername > $null
+   goodResult "Set-SafeguardUserPassword" "$($newUser.UserName) created"
+   $newUser = Edit-SafeguardUser -UserToEdit $DATA.userUsername -EmailAddress $DATA.userEmail
+   if (-not $newUser.EmailAddress.Contains($DATA.userEmail)) { badResult "Edit-SafeguardUser" "Email address failed" }
+   else { goodResult "Edit-SafeguardUser" "successfully changed email to $($newUser.EmailAddress)" }
 
    $newUser = Disable-SafeguardUser -UserToEdit $newUser.UserName
-   goodResult "Disable-SafeguardUser"  "User $($newUser.UserName) Disabled is $($newUser.Disabled)"
+   goodResult "Disable-SafeguardUser" "User $($newUser.UserName) Disabled is $($newUser.Disabled)"
    $newUser = Enable-SafeguardUser -UserToEdit $newUser.UserName
-   goodResult "Enable-SafeguardUser"  "User $($newUser.UserName) Disabled is $($newUser.Disabled)"
+   goodResult "Enable-SafeguardUser" "User $($newUser.UserName) Disabled is $($newUser.Disabled)"
 
-   $renamedUser = Rename-SafeguardUser -UserToEdit $newUser.UserName -NewUserName $renamedUsername
+   $renamedUser = Rename-SafeguardUser -UserToEdit $newUser.UserName -NewUserName $DATA.renamedUsername
    if ($renamedUser.UserName -ne $newUser.UserName) {
-      goodResult "Rename-SafeguardUser"  "User $($newUser.UserName) renamed to $($renamedUser.UserName)"
+      goodResult "Rename-SafeguardUser" "User $($newUser.UserName) renamed to $($renamedUser.UserName)"
       $newUser = Rename-SafeguardUser -UserToEdit $renamedUser.UserName -NewUserName $newUser.UserName
-      goodResult "Rename-SafeguardUser"  "User $($renamedUser.UserName) changed back to to $($newUser.UserName)"
+      goodResult "Rename-SafeguardUser" "User $($renamedUser.UserName) changed back to to $($newUser.UserName)"
    }
    else {
-      badResult "Rename-SafeguardUser"  "User $($newUser.UserName) NOT renamed"
+      badResult "Rename-SafeguardUser" "User $($newUser.UserName) NOT renamed"
    }
 
-   $foundUser = Find-SafeguardUser $userUserName
-   if ($null -ne $foundUser) {
-      goodResult "Find-SafeguardUser"  "found $($newUser.UserName)"
+   $foundUser = Find-SafeguardUser $Data.userUserName
+   if ($foundUser) { goodResult "Find-SafeguardUser" "found $($Data.userUserName)" }
+   else { badResult "Find-SafeguardUser" "DID NOT find $($Data.userUserName)" }
+
+   # create a user to delete, restore, and remove
+   $delResUser = createUser "delres_$($DATA.userUsername)"
+   Remove-SafeguardUser $delResUser.UserName > $null
+   infoResult "Deleted User" "Successfully created and deleted user for testing Id=$($delResUser.Id) Name=$($delResUser.UserName)"
+
+   try {
+      $delUserList = (Get-SafeguardDeletedUser) | Where-Object {$_.UserName -ieq "$($delResUser.UserName)"}
+      goodResult "Get-SafeguardDeletedUser" "Successfully retrieved $($delUserList.Count) deleted users"
+   } catch {
+      badResult "Get-SafeguardDeletedUser" "Failed to retrieve deleted user $($delResUser.UserName)"
    }
-   else {
-      badResult "Find-SafeguardUser"  "DID NOT find $($newUser.UserName)"
+
+   try {
+      $restored = Restore-SafeguardDeletedUser -UserToRestore $delResUser.Id
+      goodResult "Restore-SafeguardDeletedUser" "Successfully restored deleted user Id=$($delResUser.Id) Name=$($restored.UserName), new Id=$($restored.Id)"
+   } catch {
+      badResult "Restore-SafeguardDeletedUser" "Failed to restore deleted user $($delResUser.UserName)"
+   }
+
+   try {
+      Remove-SafeguardUser $restored.Id > $null
+      Remove-SafeguardDeletedUser -UserToDelete $restored.Id > $null
+      goodResult "Remove-SafeguardDeletedUser" "Successfully purged deleted user Id=$($restored.Id) Name=$($restored.UserName)"
+   } catch {
+      badResult "Remove-SafeguardDeletedUser" "Failed to purge deleted user Id=$($restored.Id) $($delResUser.UserName)"
    }
 } catch {
-      badResult "Users general" "Unexpected error in Users test" $_.Exception
+      badResult "Users general" "Unexpected error in Users test" $_
 } finally {
-   try { Remove-SafeguardUser -UserToDelete $userUsername > $null } catch {}
-   try { Remove-SafeguardUser -UserToDelete $renamedUsername > $null } catch {}
+   try { Remove-SafeguardUser -UserToDelete $DATA.userUsername > $null } catch {}
+   try { Remove-SafeguardUser -UserToDelete $DATA.renamedUsername > $null } catch {}
+   if ($delResUser) { try { Remove-SafeguardUser -UserToDelete $delResUser > $null } catch {} }
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

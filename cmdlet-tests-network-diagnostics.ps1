@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running Networking Diagnostics Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Invoke-SafeguardClusterPing
 # Invoke-SafeguardClusterThroughput
@@ -36,7 +36,7 @@ try {
    #goodResult "Invoke-SafeguardMemberThroughput" "Success"
 
    writeCallHeader "Invoke-SafeguardPing"
-   Invoke-SafeguardPing -NetworkAddress $($realArchiveServer.NetworkAddress)
+   Invoke-SafeguardPing -NetworkAddress $($DATA.realArchiveServer.NetworkAddress)
    goodResult "Invoke-SafeguardPing" "Success"
 
    #writeCallHeader "Invoke-SafeguardSessionsPing"
@@ -48,10 +48,10 @@ try {
    #goodResult "Invoke-SafeguardSessionsTelnet" "Success"
 
    writeCallHeader "Invoke-SafeguardTelnet"
-   Invoke-SafeguardTelnet -NetworkAddress $($realArchiveServer.NetworkAddress) -Port 22
+   Invoke-SafeguardTelnet -NetworkAddress $($DATA.realArchiveServer.NetworkAddress) -Port 22
    goodResult "Invoke-SafeguardTelnet" "Success"
 }
 catch {
-   badResult "Network Diagnostics general" "Unexpected error testing network diagnostic commands - $_.Exception.Message"
+   badResult "Network Diagnostics general" "Unexpected error testing network diagnostic commands - $_.Message"
 }
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

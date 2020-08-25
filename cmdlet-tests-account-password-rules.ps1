@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName = "Running Account Password Rules Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Copy-SafeguardAccountPasswordRule
 # Edit-SafeguardAccountPasswordRule
@@ -33,9 +33,9 @@ try {
    goodResult "Remove-SafeguardAccountPasswordRule"  "successfully deleted $pwdRuleName and $copyPwdRuleName"
 }
 catch {
-   badResult "general"  "Error working with Account Password Rules" $_.Exception
+   badResult "general"  "Error working with Account Password Rules" $_
 } finally {
    try { Remove-SafeguardAccountPasswordRule -PasswordRuleToDelete $pwdRuleName > $null } catch { }
    try { Remove-SafeguardAccountPasswordRule -PasswordRuleToDelete "$copyPwdRuleName" > $null } catch { }
 }
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

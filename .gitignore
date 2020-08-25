@@ -1,2 +1,7 @@
 *.sgb
-
+*.zip
+backups/*
+certs/*
+logs/*
+reports/*
+~$*

@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName = "Running Password Profile Creation Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # Copy-SafeguardPasswordProfile
 # Edit-SafeguardPasswordProfile
@@ -52,7 +52,7 @@ try {
    goodResult "Removed"  "AccountPasswordRule and Check and Change schedules"
 }
 catch {
-   badResult "general"  "Error working with Password Profiles" $_.Exception
+   badResult "general"  "Error working with Password Profiles" $_
 } finally {
    try { Remove-SafeguardPasswordProfile -ProfileToDelete "$pwdProfileName" > $null } catch { }
    try { Remove-SafeguardPasswordProfile -ProfileToDelete "$copyPwdProfileName" > $null } catch { }
@@ -61,4 +61,4 @@ catch {
    try { Remove-SafeguardPasswordChangeSchedule "$changeSchedName" > $null } catch { }
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo

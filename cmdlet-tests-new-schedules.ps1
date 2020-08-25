@@ -5,7 +5,7 @@
    exit
 }
 $TestBlockName ="Running New Schedule Creation Tests"
-$blockInfo = testBlockHeader "begin" $TestBlockName
+$blockInfo = testBlockHeader $TestBlockName
 # ===== Covered Commands =====
 # New-SafeguardSchedule
 # New-SafeguardScheduleDaily
@@ -89,7 +89,7 @@ try {
    }
 }
 catch {
-   badResult "general" "Unexpected error testing schedule creation"  $_.Exception
+   badResult "general" "Unexpected error testing schedule creation"  $_
 }
 
-testBlockHeader "end" $TestBlockName $blockInfo
+testBlockHeader $TestBlockName $blockInfo
