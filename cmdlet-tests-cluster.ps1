@@ -18,6 +18,8 @@ $blockInfo = testBlockHeader $TestBlockName
 # Unlock-SafeguardCluster
 #
 
+$savedcolors = setProgressBarColors
+
 $replicas = [System.Collections.ArrayList]@()
 try {
    $nope = 0
@@ -57,7 +59,7 @@ try {
          # yeah, we just got a token above but since the replicas are not being joined in parallel
          # there's the chance the old token might have expired by the time we get to the 2nd
          # or later replica
-         $replToken = sgConnect $repl $true
+         $replToken = sgConnect $repl.address $true
 
          $joinInfo = Add-SafeguardClusterMember -ReplicaNetworkAddress $repl.address -ReplicaAccessToken $replToken
          goodResult "Add-SafeguardClusterMember" "Successfully added $($repl.address) as a replica"
@@ -121,6 +123,7 @@ try {
    badResult "Cluster Management general" "Unexpected error in Cluster Management test" $_
 } finally {
    #try { Remove-SafeguardDirectory -DirectoryToDelete $domainname > $null } catch {}
+   setProgressBarColors $savedcolors
 }
 
 testBlockHeader $TestBlockName $blockInfo

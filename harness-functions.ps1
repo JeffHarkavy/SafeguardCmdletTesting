@@ -1,12 +1,21 @@
 ﻿# ############################################################################
-# You may need to change these based on your shell color settings
+# You may need/want to change these based on your shell color settings
 # ############################################################################
 $bgcolor = (get-host).ui.rawui.backgroundcolor
 $COLORS = @{
+   # used for general info messages
    info      = @{back="$bgcolor"; fore="DarkBlue";};
+   # used for good / bad test results
    bad       = @{back="$bgcolor"; fore="Red";};
    good      = @{back="$bgcolor"; fore="DarkGreen";};
+   # highlighted output
    highlight = @{back="$bgcolor"; fore="DarkRed";};
+   # for processes that use Write-Progress (patch, cluster, etc.)
+   # this will help powershells stupid progress bar stand out.
+   # If you want to use the standard colors then set the values to
+   # $host.privatedata.ProgressBackgroundColor/ProcessForegroundColor
+   # or just comment out the following line.
+   progress  = @{back="Black";    fore="White";};
 }
 
 # Maybe someday ps will get the ternary operator, but until then...
@@ -102,6 +111,7 @@ function badResult($cmd, $str, $ex) {
    $resultCounts.Bad++
 }
 
+# Displays the script help and exits
 function showHelp {
    Write-Host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back "
 --- Running Selected or All tests ---
@@ -135,7 +145,7 @@ function showHelp {
   exit
 }
 
-# Writes out current values of the $DATA hashtable
+# Writes out current values of the $DATA hashtable and exits
 function showData {
    $spacing = (write-output ("`n{0,32}" -f " "))
 
@@ -197,6 +207,7 @@ function sgConnect($appliance,$getToken) {
    }
 }
 
+# Sets harness-wide variables to point at either the LTS or Feature branch appliances
 function setTestBranch($branch) {
    if ($branch -ieq "LTS") {
       $DATA.appliance = $DATA.applianceLTS
@@ -219,6 +230,7 @@ function setTestBranch($branch) {
    return $DATA.appliance
 }
 
+# What it says.
 function formatSgVersion($v,$includeBuild) {
    return $v.Major.toString() + "." + `
           $v.Minor.toString() + "." + `
@@ -226,6 +238,9 @@ function formatSgVersion($v,$includeBuild) {
           (iif $includeBuild ("." + (iif $v.HotfixLevel $v.HotfixLevel $v.Build).toString()) "");
 }
 
+# If users wants output logged this will start a transcript in the logs directory.
+# It will only keep the most recent "maxLogs" (see harness-data.ps1), including the
+# one being started.
 function startTranscribing {
    if ($DATA.createLog -eq $true) {
       if (-not (Test-Path $DATA.outputPaths.logs -PathType Container)) {
@@ -242,3 +257,28 @@ function startTranscribing {
    }
    return $DATA.createLogs
 }
+
+# For any test blocks that cause Write-Progress bars to be displayed
+# (e.g., patch and cluster) this can be used to make the progress bar
+# stand out a little more.
+# Call it with no arguments at the head of the test block to set the
+# progress bar to $COLORS.progress and it will return the current colors
+# as a hashmap {bg="color";fg="color"}
+# Call it from the test's "finally" block with that hashmap to reset
+# colors back to what they were.
+function setProgressBarColors($oldvalues) {
+   if ($null -eq $oldvalues) {
+      $oldvalues = @{ bg = $host.privatedata.ProgressBackgroundColor; fg = $host.privatedata.ProgressForegroundColor; }
+
+      if ($null -ne $COLORS.progress) {
+         $host.privatedata.ProgressBackgroundColor = $COLORS.progress.back;
+         $host.privatedata.ProgressForegroundColor = $COLORS.progress.fore;
+      }
+
+      return $oldvalues
+   } elseif ($oldvalues.bg -and $oldvalues.fg) {
+      $host.privatedata.ProgressBackgroundColor = $oldvalues.bg;
+      $host.privatedata.ProgressForegroundColor = $oldvalues.fg;
+   }
+}
+

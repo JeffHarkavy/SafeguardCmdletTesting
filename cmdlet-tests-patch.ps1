@@ -13,6 +13,8 @@ $blockInfo = testBlockHeader $TestBlockName
 # Set-SafeguardPatch
 #
 
+$savedcolors = setProgressBarColors
+
 try {
    $patchPath = (iif ($testBranch -eq "LTS") $DATA.patchPathLTS $DATA.patchPathFeature) + (iif $isVM "vm\" "")
    if (-not (Test-Path $patchPath -PathType Container)) {
@@ -125,6 +127,7 @@ try {
    badResult "Patch general" "Unexpected error in Patch test" $_
 } finally {
    try { Clear-SafeguardPatch > $null } catch {}
+   setProgressBarColors $savedcolors
 }
 
 testBlockHeader $TestBlockName $blockInfo
