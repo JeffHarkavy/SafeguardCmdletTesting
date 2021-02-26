@@ -193,7 +193,7 @@ try {
             throw $_.Exception
          }
       }
-      $dynoAssetGroup = Edit-SafeguardDynamicAssetGroup -GroupToGet "$dynoAssetGroupName" -Description "Edited Description for $dynoAssetGroupName" -GroupingRule "$($DATA.dynamicAssetGroupRule)"
+      $dynoAssetGroup = Edit-SafeguardDynamicAssetGroup -GroupToEdit "$dynoAssetGroupName" -Description "Edited Description for $dynoAssetGroupName" -GroupingRule "$($DATA.dynamicAssetGroupRule)"
       goodResult "Edit-SafeguardDynamicAssetGroup" "Successfully edited $dynoAssetGroupName Description='$($dynoAssetGroup.Description)'"
 
       infoResult "Get-SafeguardAssetGroupMember" "Dynamic Asset Group $dynoAssetGroupName members"
@@ -270,7 +270,7 @@ try {
 
       # This currently errors out, so catch it separately for now but don't propagate the exception
       try {
-         $dynoAccountGroup = Edit-SafeguardDynamicAccountGroup -GroupToGet "$dynoAccountGroupName" -Description "Edited Description for $dynoAccountGroupName" -GroupingRule "$($DATA.dynamicAccountGroupRule)"
+         $dynoAccountGroup = Edit-SafeguardDynamicAccountGroup -GroupToEdit "$dynoAccountGroupName" -Description "Edited Description for $dynoAccountGroupName" -GroupingRule "$($DATA.dynamicAccountGroupRule)"
          goodResult "Edit-SafeguardDynamicAccountGroup" "Successfully edited $dynoAccountGroupName Description='$($dynoAccountGroup.Description)'"
       } catch {
          badResult "Edit-SafeguardDynamicAccountGroup" "Failed $dynoAccountGroupName" $_
