@@ -16,6 +16,9 @@ $blockInfo = testBlockHeader $TestBlockName
 $savedcolors = setProgressBarColors
 
 try {
+   if ($testBranch -match "^other:") {
+      throw "Patch testing not done for 'Other' test branch. Skipping all Patch tests."
+   }
    $patchPath = (iif ($testBranch -eq "LTS") $DATA.patchPathLTS $DATA.patchPathFeature) + (iif $isVM "vm\" "")
    if (-not (Test-Path $patchPath -PathType Container)) {
       throw "Can not find directory for patch - $patchPath. Skipping all Patch tests."

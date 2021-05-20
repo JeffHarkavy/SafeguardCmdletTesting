@@ -4,7 +4,7 @@
 $bgcolor = (get-host).ui.rawui.backgroundcolor
 $COLORS = @{
    # used for general info messages
-   info      = @{back="$bgcolor"; fore="DarkBlue";};
+   info      = @{back="$bgcolor"; fore="Cyan";};
    # used for good / bad test results
    bad       = @{back="$bgcolor"; fore="Red";};
    good      = @{back="$bgcolor"; fore="DarkGreen";};
@@ -121,21 +121,22 @@ function showHelp {
     These tests can be run individually or pass ""allexplicit"" to run all of them at once.
   - Invoke with a space-delimited list of test names to run individual tests.
     Test names do not have to be exact, but must be non-ambiguous.
-  - Pass LTS or Feature to change test targets. Tests LTS branch by default.
+  - Pass LTS or Feature or Other:ipaddress to change test targets. Tests LTS branch by default.
+    Other will not test patch or cluster.
   - Pass Log or NoLog to turn transcript logging on or off (default is Off)
 
   Valid test names are (in order of execution): "
   (($Tests.GetEnumerator() | Where-Object {$explicitTestKeys -notcontains $_.Key}) | Sort {$_.Value.Seq}) | `
      foreach-object { 
         Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back `
-        ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($_.Value.inter -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" ""))
+        ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($_.Value.interactive -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" ""))
      }
   Write-Host ""
   Write-Host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back "  The following tests must be individually requested or ""allexplicit"" must be specified:"
   (($Tests.GetEnumerator() | Where-Object {$explicitTestKeys -contains $_.Key}) | Sort {$_.Value.Seq}) | `
      foreach-object { 
         Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back `
-        ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($_.Value.inter -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" ""))
+        ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($_.Value.interactive -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" ""))
      }
   Write-Host ""
   Write-Host "    (1) - Test may require human interaction."
@@ -214,11 +215,16 @@ function setTestBranch($branch) {
       $DATA.clusterPrimary = $DATA.clusterPrimaryLTS;
       $DATA.clusterReplicas = $DATA.clusterReplicasLTS;
       $DATA.clusterSession = $DATA.clusterSessionLTS;
-   } else {
+   } elseif ($branch -ieq "feature") {
       $DATA.appliance = $DATA.applianceFeature
       $DATA.clusterPrimary = $DATA.clusterPrimaryFeature;
       $DATA.clusterReplicas = $DATA.clusterReplicasFeature;
       $DATA.clusterSession = $DATA.clusterSessionFeature;
+   } elseif ($branch -match "^other:(?<address>.*)") {
+      $DATA.appliance = $Matches.address
+      $DATA.clusterPrimary = $DATA.appliance;
+      $DATA.clusterReplicas = @();
+      $DATA.clusterSession = @();
    }
 
    foreach ($dir in $DATA.outputPaths.GetEnumerator()) {

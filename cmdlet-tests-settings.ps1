@@ -19,7 +19,7 @@ $blockInfo = testBlockHeader $TestBlockName
 #
 
 try {
-   if ($isLTS -or $testBranch -eq "LTS") {
+   if ($isLTS -or $testBranch -eq "LTS" -or $testBranch -match "^other:") {
       throw "Settings tests are only available on Feature branch"
    }
 
