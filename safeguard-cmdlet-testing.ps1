@@ -152,7 +152,7 @@ $Tests = @{
    Diagnostic= @{
       Seq=22; runTest = "N"; interactive="N";
       fileName = "cmdlet-tests-diagnostic.ps1";
-      description="WIP. Appliance diagnostic packages.";
+      description="Appliance diagnostic packages.";
    };
    Starling = @{
       Seq=23; runTest = "N"; interactive="N";
