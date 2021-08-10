@@ -30,11 +30,12 @@ try {
    $diagon = Get-SafeguardDiagnosticPackage
    goodResult "Get-SafeguardDiagnosticPackageStatus" "Successfull retrieved Get-SafeguardDiagnosticPackageStatus $($diagon)"
 
-   $DiagnosticPackageFilePath = "$($SCRIPT_PATH)" + "\AutomationSuccess.sgd"
+   #This only tests Prod... A test one can be found here https://sg-archive.sg.lab/pangaea/qa/secdiags/test/mbx_3000/AutomationSuccess.sgd to used by hand if wanted
+   $DiagnosticPackageFileName = "\AutomationSuccess.sgd"
    if  ($isVm) {
-      $DiagnosticPackageFilePath = "$($SCRIPT_PATH)" + "\VmAutomationSuccess.sgd"
+      $DiagnosticPackageFileName = "\VmAutomationSuccess.sgd"
    }
-
+   $DiagnosticPackageFilePath = "$($SCRIPT_PATH)" + "$($DiagnosticPackageFileName)"
    $diagon = Set-SafeguardDiagnosticPackage -PackagePath "$($DiagnosticPackageFilePath)"
    goodResult "Set-SafeguardDiagnosticPackage" "Successfull set Set-SafeguardDiagnosticPackage $($diagon)"
 
