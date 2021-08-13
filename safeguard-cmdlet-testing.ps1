@@ -169,6 +169,11 @@ $Tests = @{
       fileName = "cmdlet-tests-settings.ps1";
       description="Tests Settings commands (no LTS tests).";
    };
+   Time = @{
+      Seq=26; runTest = "N"; interactive="Y";
+      fileName = "cmdlet-tests-time.ps1";
+      description="Tests time commands.";
+   };
    # Somebody has to be last, why not these?
    FilterProperties = @{
       Seq=96; runTest = "N"; interactive="N"; explicitTest="Y";

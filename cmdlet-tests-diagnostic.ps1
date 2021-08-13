@@ -16,7 +16,7 @@ $blockInfo = testBlockHeader $TestBlockName
 
 try {
    $localDiagnosticPackageFilename = "cmdlet-test-sgdiagnosticpackage_$testBranch_$("{0:yyyy}{0:MM}{0:dd}_{0:HH}{0:mm}{0:ss}" -f (Get-Date)).sgb"
-   $localDiagnosticPackageFilePath = "$($DATA.outputPaths.diagon)\$localDiagnosticPackageFilename"
+   $localDiagnosticPackageFilePath = "$($DATA.outputPaths.logs)\$localDiagnosticPackageFilename"
 
    $diagon = Clear-SafeguardDiagnosticPackage
    goodResult "Clear-SafeguardDiagnosticPackage" "Successfull Clear SafeguardDiagnosticPackage $($diagon)"
