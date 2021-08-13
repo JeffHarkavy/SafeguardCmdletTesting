@@ -155,9 +155,9 @@ $Tests = @{
       description="Appliance diagnostic packages.";
    };
    Starling = @{
-      Seq=23; runTest = "N"; interactive="N";
+      Seq=23; runTest = "N"; interactive="Y";
       fileName = "cmdlet-tests-starling.ps1";
-      description="WIP. Starling join 'n stuff.";
+      description="Starling join 'n stuff.";
    };
    Patch = @{
       Seq=24; runTest = "N"; interactive="Y";
