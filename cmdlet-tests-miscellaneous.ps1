@@ -7,9 +7,6 @@
 $TestBlockName ="Running Miscellaneous Tests"
 $blockInfo = testBlockHeader $TestBlockName
 # TODO - stubbed code
-#Enable-SafeguardBmcConfiguration - !$isVm
-#Set-SafeguardBmcAdminPassword - !$isVm
-#Set-SafeguardTime
 #Test-SafeguardAuditLogArchive - !$isLTS
 
 # === COVERED COMMANDS ===
@@ -40,7 +37,8 @@ $blockInfo = testBlockHeader $TestBlockName
 # Get-SafeguardSyslogServer
 # New-SafeguardSyslogServer
 # Remove-SafeguardSyslogServer
-#
+# Enable-SafeguardBmcConfiguration - !$isVm
+# Set-SafeguardBmcAdminPassword - !$isVm
 
 try {
    $output = Invoke-SafeguardMethod Core POST ReasonCodes -Body @{ Name = "RN12345"; Description = "Routine maintenance." }
@@ -165,5 +163,96 @@ try {
 } finally {
    if ($newsyslog.Id) { try{Remove-SafeguardSyslogServer -ServerToRemove $newsyslog.Id > $null} catch{} }
 }
+
+
+try {
+   Enable-SafeguardBmcConfiguration -Ipv4Address "$($DATA.appliancebmc.Ipv4Address)" -Ipv4Gateway "$($DATA.appliancebmc.Ipv4Gateway)" -Ipv4NetMask "$($DATA.appliancebmc.Ipv4NetMask)" -Password "$($DATA.appliancebmc.Password)" > $null
+   goodResult "Enable-SafeguardBmcConfiguration" "Successfull Enable SafeguardBmcConfiguration"
+} catch {
+   if ($isVM) {
+      if ($_ -match "This operation is not supported for this platform type"){
+         goodResult "Enable-SafeguardBmcConfiguration" "Successfull Enable-SafeguardBmcConfiguration doesn't work on VMs"
+      }
+      else {
+         infoResult "Enable-SafeguardBmcConfiguration" "You may need to add 'appliancebmc = @{Ipv4Address=; Ipv4Gateway = ; Ipv4NetMask = ; Password=}  to your Data object"
+         badResult "Enable-SafeguardBmcConfiguration" "Unexpected error in Enable-SafeguardBmcConfiguration" $_
+      }
+   }
+   else{
+      infoResult "Enable-SafeguardBmcConfiguration" "You may need to add 'appliancebmc = @{Ipv4Address=; Ipv4Gateway = ; Ipv4NetMask = ; Password=}  to your Data object"
+      badResult "Enable-SafeguardBmcConfiguration" "Unexpected error in Enable-SafeguardBmcConfiguration" $_
+   }
+}
+try {
+   Set-SafeguardBmcAdminPassword -Password "NotTest1234" > $null
+   goodResult "Set-SafeguardBmcAdminPassword" "Successfull Set SafeguardBmcAdminPassword"
+} catch {
+   if ($isVM) {
+      if ($_ -match "This operation is not supported for this platform type"){
+         goodResult "Set-SafeguardBmcAdminPassword" "Successfull Set-SafeguardBmcAdminPassword doesn't work on VMs"
+      }
+      else {
+         badResult "Set-SafeguardBmcAdminPassword" "Unexpected error in VM Set-SafeguardBmcAdminPassword" $_
+      }
+   }
+   else{
+      badResult "Set-SafeguardBmcAdminPassword" "Unexpected error in Set-SafeguardBmcAdminPassword" $_
+   }
+}
+
+try {
+   Get-SafeguardBmcConfiguration > $null
+   goodResult "Get-SafeguardBmcConfiguration" "Successfull Get-SafeguardBmcConfiguration"
+} catch {
+   if ($isVM) {
+      if ($_ -match "This operation is not supported for this platform type"){
+         goodResult "Get-SafeguardBmcConfiguration" "Successfull Get-SafeguardBmcConfiguration doesn't work on VMs"
+      }
+      else {
+         badResult "Get-SafeguardBmcConfiguration" "Unexpected error in VM Get-SafeguardBmcConfiguration" $_
+      }
+   }
+   else{
+      badResult "Get-SafeguardBmcConfiguration" "Unexpected error in Get-SafeguardBmcConfiguration" $_
+   }
+}
+
+try {
+   Disable-SafeguardBmcConfiguration > $null
+   goodResult "Disable-SafeguardBmcConfiguration" "Successfull Disable-SafeguardBmcConfiguration"
+} catch {
+   if ($isVM) {
+      if ($_ -match "This operation is not supported for this platform type"){
+         goodResult "Disable-SafeguardBmcConfiguration" "Successfull Disable-SafeguardBmcConfiguration doesn't work on VMs"
+      }
+      else {
+         badResult "Disable-SafeguardBmcConfiguration" "Unexpected error in VM Disable-SafeguardBmcConfiguration" $_
+      }
+   }
+   else{
+      badResult "Disable-SafeguardBmcConfiguration" "Unexpected error in Disable-SafeguardBmcConfiguration" $_
+   }
+}
+
+# try {
+#    #TODO Need to make these files and commit then to the repo. Then this code can be polished
+#    $AuditLogArchiveKeyFileName = "\AuditLogArchiveKeyFile.sgd"
+#    $AuditLogArchiveFileName = "\AuditLogArchiveFile.sgd"
+#    if  ($isVm) {
+#       $AuditLogArchiveFileName = "\VmAuditLogArchiveFile.sgd"
+#       $AuditLogArchiveKeyFileName = "\VmAuditLogArchiveKeyFile.sgd"
+#    }
+#    $AuditLogArchiveFilePath = "$($SCRIPT_PATH)" + "$($AuditLogArchiveFileName)"
+#    $AuditLogArchiveKeyFilePath = "$($SCRIPT_PATH)" + "$($AuditLogArchiveKeyFileName)"
+#    Test-SafeguardAuditLogArchive -ArchiveZip "$($AuditLogArchiveFilePath)" -SigningCertificate "$($AuditLogArchiveKeyFilePath)"
+#    goodResult "Test-SafeguardAuditLogArchive" "Successfull Test-SafeguardAuditLogArchive"
+# } catch {
+#    if ($isLTS) {
+#       goodResult "Test-SafeguardAuditLogArchive" "Successfull Test-SafeguardAuditLogArchive doesn't work on VMs"
+#    }
+#    else{
+#       badResult "Test-SafeguardAuditLogArchive" "Unexpected error in Test-SafeguardAuditLogArchive" $_
+#    }
+# }
 
 testBlockHeader $TestBlockName $blockInfo

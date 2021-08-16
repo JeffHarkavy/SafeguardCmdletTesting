@@ -152,12 +152,12 @@ $Tests = @{
    Diagnostic= @{
       Seq=22; runTest = "N"; interactive="N";
       fileName = "cmdlet-tests-diagnostic.ps1";
-      description="WIP. Appliance diagnostic packages.";
+      description="Appliance diagnostic packages.";
    };
    Starling = @{
-      Seq=23; runTest = "N"; interactive="N";
+      Seq=23; runTest = "N"; interactive="Y";
       fileName = "cmdlet-tests-starling.ps1";
-      description="WIP. Starling join 'n stuff.";
+      description="Starling join 'n stuff.";
    };
    Patch = @{
       Seq=24; runTest = "N"; interactive="Y";
@@ -168,6 +168,11 @@ $Tests = @{
       Seq=25; runTest = "N"; interactive="N";
       fileName = "cmdlet-tests-settings.ps1";
       description="Tests Settings commands (no LTS tests).";
+   };
+   Time = @{
+      Seq=26; runTest = "N"; interactive="Y";
+      fileName = "cmdlet-tests-time.ps1";
+      description="Tests time commands.";
    };
    # Somebody has to be last, why not these?
    FilterProperties = @{
