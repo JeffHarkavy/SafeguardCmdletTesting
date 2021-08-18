@@ -166,7 +166,8 @@ try {
 
 
 try {
-   Enable-SafeguardBmcConfiguration -Ipv4Address "$($DATA.appliancebmc.Ipv4Address)" -Ipv4Gateway "$($DATA.appliancebmc.Ipv4Gateway)" -Ipv4NetMask "$($DATA.appliancebmc.Ipv4NetMask)" -Password "$($DATA.appliancebmc.Password)" > $null
+   $bmcpassword = $DATA.appliancebmc.Password | ConvertTo-SecureString -AsPlainText -Force
+   Enable-SafeguardBmcConfiguration -Ipv4Address "$($DATA.appliancebmc.Ipv4Address)" -Ipv4Gateway "$($DATA.appliancebmc.Ipv4Gateway)" -Ipv4NetMask "$($DATA.appliancebmc.Ipv4NetMask)" -Password $bmcpassword > $null
    goodResult "Enable-SafeguardBmcConfiguration" "Successfull Enable SafeguardBmcConfiguration"
 } catch {
    if ($isVM) {
@@ -184,8 +185,10 @@ try {
    }
 }
 try {
-   Set-SafeguardBmcAdminPassword -Password "NotTest1234" > $null
+   $notbmcpassword = "NotTest1234" | ConvertTo-SecureString -AsPlainText -Force
+   Set-SafeguardBmcAdminPassword -Password $notbmcpassword > $null
    goodResult "Set-SafeguardBmcAdminPassword" "Successfull Set SafeguardBmcAdminPassword"
+   Set-SafeguardBmcAdminPassword -Password $bmcpassword > $null
 } catch {
    if ($isVM) {
       if ($_ -match "This operation is not supported for this platform type"){

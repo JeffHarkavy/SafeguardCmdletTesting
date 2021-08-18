@@ -47,6 +47,7 @@ try {
    # - an asset and some accounts
    # - SPS
    # - an entitlement and some access policies: pwd, session (RDP and SSH), ssh key
+   # A good example for this setup can be found in cmdlet-test-a2a.ps1. I just didn't get around to this cmdlet.
 } catch {
    badResult "Access Requests general" "Unexpected error in Access Requests test" $_
 } finally {

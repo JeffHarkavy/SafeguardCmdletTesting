@@ -122,7 +122,7 @@ $Tests = @{
    A2A = @{
       Seq=16; runTest = "N"; interactive="N";
       fileName = "cmdlet-tests-a2a.ps1";
-      description="WIP. A2A configuration and use.";
+      description="A2A configuration and use.";
    };
    Requests = @{
       Seq=17; runTest = "N"; interactive="N";
