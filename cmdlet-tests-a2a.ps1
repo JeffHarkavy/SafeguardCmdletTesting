@@ -39,9 +39,6 @@ $blockInfo = testBlockHeader $TestBlockName
 # Get-SafeguardA2aCredentialRetrievalApiKey
 # Get-SafeguardA2aCredentialRetrievalInformation
 # Get-SafeguardA2aCredentialRetrievalIpRestriction
-# Get-SafeguardA2aAcessRequestBrokerApiKey
-# Get-SafeguardA2aAcessRequestBrokerIpRestriction
-# SafeguardA2aAcessRequestBroker
 # New-SafeguardA2a
 # Reset-SafeguardA2aAccessRequestBrokerApiKey
 # Reset-SafeguardA2aCredentialRetrievalApiKey
@@ -254,6 +251,7 @@ $ready = $true
 try {
    # Create-User
    #region Users
+   
    New-SafeguardUser -NewUserName "Testing" -FirstName "Test" -LastName "ing" -NoPassword -Provider -1 > $null
    $secPassword = "root4EDMZ" | ConvertTo-SecureString -AsPlainText -Force
    Set-SafeguardUserPassword -Password $secPassword -UserToEdit "Testing" > $null
@@ -263,8 +261,8 @@ try {
 
    # Create-CertificateUser
    #region Users 
-   New-SafeguardUser -NewUserName "safeguard-ps-user" -FirstName "safeguard" -LastName "ps-user" -NoPassword -Provider -2 -Thumbprint "2349a0311c312f6dff57875fd2b2a112b8e2c644" > $null
-   $certUserName = Get-SafeguardUser -UserToGet "safeguard-ps-user"
+   New-SafeguardUser -NewUserName "cert-safeguard-ps-user" -FirstName "safeguard" -LastName "ps-user" -NoPassword -Provider -2 -Thumbprint "2349a0311c312f6dff57875fd2b2a112b8e2c644" > $null
+   $certUserName = Get-SafeguardUser -UserToGet "cert-safeguard-ps-user"
    #endregion
 
    # Create-AssetAccount
