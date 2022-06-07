@@ -14,27 +14,28 @@ $SCRIPT_PATH = if($SCRIPT_PATH) {$SCRIPT_PATH} else {(Get-Location).Path}
 
 $DATA = @{
    #addresses of LTS and Feature branch appliances
-   applianceLTS = "10.9.4.222";
-   applianceFeature = "10.9.4.227"
+   applianceLTS = "10.5.34.128";
+   applianceFeature = "10.5.34.128"
 
    # ip address of appliance to test.
    # Based on cmdline args this will be set to either LTS or feature appliance
-   appliance = "10.9.4.222";
+   appliance = "10.5.33.128";
 
    # Version numbers to be used when looking for patch files
-   LTSVersion = "6.0.7";
-   FeatureVersion = "6.7.0";
+   LTSVersion = "7.0.0";
+   FeatureVersion = "7.0.0";
 
    # uber-admin user with all admin permissions. The same user will be used
    # to run all commands unless otherwise noted.
-   userName = "sgAdmin";
-   secPassword = "Admin4SG" | ConvertTo-SecureString -AsPlainText -Force;
+   userName = "sudo";
+   secPassword = "Test1234" | ConvertTo-SecureString -AsPlainText -Force;
 
    # login provider for the above 
    idProvider = "local";
 
    # admin user and password for any SPS appliances. Again, the same user
    # needs to be provisioned on all appliances.
+   # Hint ask Brad Nicholes for a good SPS if you don't have one
    SPSAdmin = "admin";
    SPSAdminPassword = "root4EDMZ" | ConvertTo-SecureString -AsPlainText -Force;
 
@@ -59,27 +60,27 @@ $DATA = @{
 
    # real archive server information
    # This networkaddress will also be used in Network diagnostic tests
-   # Make sure to edit this to fit your environment - this is one of my
-   # linux boxes and I don't guarantee it will be up all the time.
+   ######Create the sub directory ps in /data/archives/archivist, then delete the subdirectory when you're done #####
    realArchiveServer = @{
-      archSrvName = "ps.ArchSrv_001";
-      NetworkAddress = "10.9.6.69";
+      archSrvName = "ps.sg-archive";
+      NetworkAddress = "sg-archive.sg.lab";
       TransferProtocol = "Scp";
       Port = "22";
-      StoragePath = "/home/sgarchive";
+      StoragePath = "/data/archives/archivist/ps";
       ServiceAccountCredentialType = "Password";
-      ServiceAccountName = "root";
-      ServiceAccountPassword = "Password1" | ConvertTo-SecureString -AsPlainText -Force;
+      ServiceAccountName = "archivist";
+      ServiceAccountPassword = "!Deposit0r" | ConvertTo-SecureString -AsPlainText -Force;
    };
 
    # names of assets, accounts, and groups to be created and meddled with.
    # Asset and accounts are expected to be "real" and reachable during tests
+   # as long as this one is up these psusers were made for this test.
    assetName = "ps.Asset_001";
    assetServiceAccount = "root";
-   assetServiceAccountPassword = "Password1" | ConvertTo-SecureString -AsPlainText -Force;
-   assetIpAddress = "10.9.6.69";
+   assetServiceAccountPassword = "test123" | ConvertTo-SecureString -AsPlainText -Force;
+   assetIpAddress = "sg-ubuntu2004.sg.lab";
    assetPlatform = "Ubuntu 16.04 LTS x86_64";
-   assetAccounts = @("user_0001","user_0002","user_0003","user_0004","user_0005");
+   assetAccounts = @("psuser_1","psuser_2","psuser_3","psuser_4","psuser_5");
    userGroupName = "ps.UserGroup_001";
    assetGroupName = "ps.AssetGroup_001";
    accountGroupName = "ps.AccountGroup_001";
@@ -88,8 +89,8 @@ $DATA = @{
    entitlementName = "ps.Entitlement"
    accessPolicy = "ps.TestPolicy"
    
-   #license file to be used for license remove/install testing
-   licenseFile = $SCRIPT_PATH + "\license-123-456-000.dlv";
+   #license file to be used for license remove/install testing 7.0 version
+   licenseFile = $SCRIPT_PATH + "\license-7-0.dlv";
 
    # This DNS must be in the list for X0 in order for certain functions to work.
    # If the default DNS is sufficient then either set that address here or set
@@ -97,11 +98,11 @@ $DATA = @{
    requiredDNS = "10.9.6.64";
 
    # Domain information used for testing directory, identity provider, and certificates.
-   domainName = "jshdevvm.dell.com";
+   domainName = "c.sg.lab";
    netBIOS = "JSHDEVVM";
-   domainAdmin = "administrator";
-   domainPassword = "root4EDMZ" | ConvertTo-SecureString -AsPlainText -Force;
-   directoryAccounts = @("User_001","User_002","User_003");
+   domainAdmin = "madmin-c";
+   domainPassword = "test123" | ConvertTo-SecureString -AsPlainText -Force;
+   directoryAccounts = @("muser-c","muser2-c","muser3-c");
 
    # Certificate Signing Request stuff
    newCsrSubject = "CN=Bedrock,OU=Yabba,O=Dabba";
@@ -123,6 +124,9 @@ $DATA = @{
       reports = "$SCRIPT_PATH\reports\";
       certificates = "$SCRIPT_PATH\certs\";
    }
+   
+   #BMC Data for a VM doesn't matter. If testing on hardware change this.
+   appliancebmc = @{Ipv4Address="0.0.0.0"; Ipv4Gateway = "0.0.0.0"; Ipv4NetMask = "250.250.250.244"; Password="Junk"}
 }
 
 # For things that need to be created based on other hashtable members
@@ -139,10 +143,14 @@ $DATA += @{
    # TODO still deciding on what to do with clustering...
    clusterPrimaryLTS = $DATA.applianceLTS;
    clusterReplicasLTS = @("10.9.4.223","10.9.4.224");
-   clusterSessionLTS = @("10.9.4.220","10.9.4.221");
+   #Hint ask Brad Nicholes for a good SPS if you don't have one
+   #for the tests now you only need one.
+   clusterSessionLTS = @("10.5.33.211","10.9.4.221");
    clusterPrimaryFeature = $DATA.applianceFeature;
    clusterReplicasFeature = @("10.9.4.228","10.9.4.229");
-   clusterSessionFeature = @("10.9.4.225","10.9.4.226");
+   #Hint ask Brad Nicholes for a good SPS if you don't have one
+   #for the tests now you only need one.
+   clusterSessionFeature = @("10.5.33.211","10.9.4.226");
 
    # Based on cmdline args will be set to either LTS or feature appliance values
    # These appliances are expected to accept the same uber-admin name and

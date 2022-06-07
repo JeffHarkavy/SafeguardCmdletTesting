@@ -32,36 +32,6 @@ $blockInfo = testBlockHeader $TestBlockName
 #
 
 try {
-   Get-SafeguardAccessCertificationAccount -Identifier $DATA.appliance -StdOut
-   goodResult "Get-SafeguardAccessCertificationAccount" "Successfully called"
-
-   # NOTE
-   # these require that ActiveDirectory modules be installed. See "Install Instructions" here
-   # https://www.microsoft.com/en-us/download/details.aspx?id=45520
-   #
-   # Install these
-   #   RSAT: Server Manager
-   #   RSAT: Active Directory Domain Services and Lightweight Directory Services Tools
-   try {
-      Get-SafeguardAccessCertificationAll -Identifier $DATA.appliance -OutputDirectory $DATA.outputPaths.certificates -DomainName $DATA.domainName -Credential $DATA.domainCredential
-      goodResult "Get-SafeguardAccessCertificationAll" "Successfully called. Check CSV files for output."
-
-      Get-ADAccessCertificationIdentity -StdOut -DomainName $DATA.domainName -Credential $DATA.domainCredential
-      goodResult "Get-ADAccessCertificationIdentity" "Successfully called"
-   } catch {
-      badResult "Access Certification" "Error accessing domain $($DATA.domainName) for Access Certification Info" $_
-   }
-
-   Get-SafeguardAccessCertificationGroup -Identifier $DATA.appliance -StdOut
-   goodResult "Get-SafeguardAccessCertificationGroup" "Successfully called"
-
-   Get-SafeguardAccessCertificationIdentity -Identifier $DATA.appliance -StdOut
-   goodResult "Get-SafeguardAccessCertificationIdentity" "Successfully called"
-
-   # This assumes some entitlement stuff being around for meaningful output?
-   Get-SafeguardAccessCertificationEntitlement -Identifier $DATA.appliance -StdOut
-   goodResult "Get-SafeguardAccessCertificationEntitlement" "Successfully called"
-
    try {
       $csr = New-SafeguardCsr -CertificateType Ssl -Subject $DATA.newCsrSubject `
           -DnsNames $DATA.newCsrDns -IpAddresses $DATA.newCsrIpAddress `

@@ -20,7 +20,12 @@ $blockInfo = testBlockHeader $TestBlockName
 
 try {
    if ($isLTS -or $testBranch -eq "LTS" -or $testBranch -match "^other:") {
-      throw "Settings tests are only available on Feature branch"
+	if ($sgVersion.Baseline){
+		infoResult "New baseline so test both Feature and LTS"
+	  }
+	else{
+		throw "Settings tests are only available on Feature branch"
+	}
    }
 
    Get-SafeguardApplianceSetting | Format-Table
