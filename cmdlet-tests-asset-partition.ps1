@@ -30,16 +30,16 @@ try {
    $partitionOwnerUser = Find-SafeguardUser $DATA.partitionOwnerUserName
    if (-not $partitionOwnerUser) {
       $partitionOwnerUser = New-SafeguardUser -NewUserName $DATA.partitionOwnerUserName -FirstName "Safeguard-ps" -LastName "PartitionOwner" -NoPassword -Provider -1
-      infoResult "New-SafeguardUser" "$($partitionOwnerUser.UserName) user created for partition owner testing" $null
+      infoResult "New-SafeguardUser" "$($partitionOwnerUser.Name) user created for partition owner testing" $null
       $deletePartitionOwner = $true
    }
    else {
-      infoResult "Find-SafeguardUser" "using existing $($partitionOwnerUser.UserName) user for partition owner testing" $null
+      infoResult "Find-SafeguardUser" "using existing $($partitionOwnerUser.Name) user for partition owner testing" $null
       $deletePartitionOwner = $false
    }
 
-   Add-SafeguardAssetPartitionOwner -AssetPartitionToEdit "$($newPartition.name)" -UserList $partitionOwnerUser.UserName > $null
-   goodResult "Add-SafeguardAssetPartitionOwner" "$($newPartition.name) owner set to $($partitionOwnerUser.UserName)"
+   Add-SafeguardAssetPartitionOwner -AssetPartitionToEdit "$($newPartition.name)" -UserList $partitionOwnerUser.Name > $null
+   goodResult "Add-SafeguardAssetPartitionOwner" "$($newPartition.name) owner set to $($partitionOwnerUser.Name)"
    Get-SafeguardAssetPartitionOwner -AssetPartitionToGet "$($newPartition.name)" | format-table
 
    Enter-SafeguardAssetPartition -AssetPartitionToEnter $newPartition.name > $null
@@ -48,13 +48,13 @@ try {
    Exit-SafeguardAssetPartition > $null
    goodResult "Exit-SafeguardAssetPartition" "exited $($newPartition.name)"
    Get-SafeguardCurrentAssetPartition | format-table
-   Remove-SafeguardAssetPartitionOwner -AssetPartitionToEdit "$($newPartition.name)" -UserList $partitionOwnerUser.UserName > $null
-   goodResult "Remove-SafeguardAssetPartitionOwner" "$($newPartition.name) owner removed $($partitionOwnerUser.UserName)"
+   Remove-SafeguardAssetPartitionOwner -AssetPartitionToEdit "$($newPartition.name)" -UserList $partitionOwnerUser.Name > $null
+   goodResult "Remove-SafeguardAssetPartitionOwner" "$($newPartition.name) owner removed $($partitionOwnerUser.Name)"
    Get-SafeguardAssetPartitionOwner -AssetPartitionToGet "$($newPartition.name)" | format-table
 
    if ($deletePartitionOwner) {
       Remove-SafeguardUser -UserToDelete $DATA.partitionOwnerUserName -ErrorAction:SilentlyContinue > $null
-      infoResult "Remove-SafeguardUser" "- removed $($partitionOwnerUser.UserName)"
+      infoResult "Remove-SafeguardUser" "- removed $($partitionOwnerUser.Name)"
    }
    Remove-SafeguardAssetPartition -AssetPartitionToDelete "$($newPartition.name)" > $null
    goodResult "Remove-SafeguardAssetPartition" "$($newPartition.name) removed"

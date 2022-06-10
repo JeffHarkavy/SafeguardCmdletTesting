@@ -53,20 +53,15 @@ try {
 try {
    $x0 = Get-SafeguardNetworkInterface -Interface "x0"
    infoResult "Get-SafeguardNetworkInterface" "Existing DNSServers for x0=$($x0.DnsServers -join ' ')"
-
    $setX0 = Set-SafeguardNetworkInterface -Interface "x0" -DnsServers @("10.1.1.37","10.1.1.10")
    goodResult "Set-SafeguardNetworkInterface" "Successfuly edited X0.DnsServers=$($setX0.DnsServers -join ' ')"
-
    $setX0 = Set-SafeguardNetworkInterface -Interface "x0" -DnsServers $x0.DnsServers
    infoResult "Set-SafeguardNetworkInterface" "Reset DNSServers for x0=$($x0.DnsServers -join ' ')"
-
-   $x0Dns = Get-SafeguardDnsSuffix -Interface x0
+   $x0Dns = Get-SafeguardDnsSuffix
    infoResult "Get-SafeguardNetworkInterface" "Existing DnsSuffixes for x0=$($x0Dns.DomainNames -join ' ')"
-
-   $setX0Dns = Set-SafeguardDnsSuffix -Interface x0 -DnsSuffixes @("foo.com","bar.com")
+   $setX0Dns = Set-SafeguardDnsSuffix -DnsSuffixes @("foo.com","bar.com")
    goodResult "Set-SafeguardDnsSuffix" "Successfuly edited X0 DnsSuffixes=$($setX0Dns.DomainNames -join ' ')"
-
-   $setX0Dns = Set-SafeguardDnsSuffix -Interface x0 -DnsSuffixes "$($x0Dns.DomainNames)"
+   $setX0Dns = Set-SafeguardDnsSuffix -DnsSuffixes "$($x0Dns.DomainNames)"
    infoResult "Set-SafeguardDnsSuffix" "Successfuly reset X0 DnsSuffixes=$($setX0Dns.DomainNames -join ' ')"
 } catch {
    badResult "Network Interface general" "Unexpected error" $_

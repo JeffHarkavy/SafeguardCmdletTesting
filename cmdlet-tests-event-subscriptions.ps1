@@ -42,13 +42,17 @@ try {
    } catch {
       badResult "Get-SafeguardEventSubscription" "Did NOT retrieve subscription Id=$subscriptionId" $_
    }
-
-   $findSubscription = Find-SafeguardEventSubscription -SearchString edited
-   if ($findSubscription) {
-      goodResult "Find-SafeguardEventSubscription" "Successfully found event Subscription Id=$($findSubscription.Id)'"
-   } else {
-      badResult "Find-SafeguardEventSubscription" "Did NOT find subscription Id=$subscriptionId"
-   }
+   try {
+		infoResult "Find-SafeguardEventSubscription -Verbose -SearchString edited"
+		$findSubscription = Find-SafeguardEventSubscription -Verbose -SearchString edited
+		if ($findSubscription) {
+			goodResult "Find-SafeguardEventSubscription" "Successfully found event Subscription Id=$($findSubscription.Id)'"
+		} else {
+			badResult "Find-SafeguardEventSubscription" "Did NOT find subscription Id=$subscriptionId"
+		}
+	} catch{
+		badResult "Find-SafeguardEventSubscription" "Did NOT find subscription Id=$subscriptionId" $_
+	}
    Remove-SafeguardEventSubscription -SubscriptionId $subscriptionID > $null
    goodResult "Remove-SafeguardEventSubscription" "Successfully removed event Subscription Id=$($subscription.Id)'"
 } catch {

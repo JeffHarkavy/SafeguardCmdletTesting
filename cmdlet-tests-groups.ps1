@@ -83,7 +83,7 @@ try {
       }
 
       Add-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.userUsername > $null
-      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
+      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).Name
       if ($DATA.userUsername -in $groupMembers) {
          goodResult "Add-SafeguardUserGroupMember" "$($DATA.userUsername) successfully added to $($userGroup.Name)"
       }
@@ -92,7 +92,7 @@ try {
       }
 
       Remove-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.userUsername > $null
-      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
+      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).Name
       if ($null -eq $groupMembers -or -not $DATA.userUsername -in $groupMembers) {
          goodResult "Remove-SafeguardUserGroupMember" "$($DATA.userUsername) successfully removed from $($userGroup.Name)"
       }
@@ -101,7 +101,7 @@ try {
       }
 
       Edit-SafeguardUserGroup -GroupToEdit $userGroup.Name -UserList $DATA.userUsername -Operation add > $null
-      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
+      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).Name
       if ($DATA.userUsername -in $groupMembers) {
          goodResult "Edit-SafeguardUserGroup" "$($DATA.userUsername) successfully edited to add to $($userGroup.Name)"
       }
@@ -112,7 +112,7 @@ try {
       Remove-SafeguardUserGroup -GroupToDelete "$($DATA.userGroupName)" > $null
       goodResult "Remove-SafeguardUserGroup" "Successfully removed $($DATA.userGroupName)"
    } catch {
-      badResult "general" "Error adding $userUserName to group $($userGroup.Name)" $_
+      badResult "general" "Error adding $($DATA.userUserName) to group $($userGroup.Name)" $_
    } 
 } catch {
    badResult "Groups general" "Unexpected error in Groups tests" $_

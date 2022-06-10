@@ -73,9 +73,10 @@ try {
    $asset = Invoke-SafeguardAssetSshHostKeyDiscovery -Asset $DATA.assetname -AcceptSshHostKey
    goodResult "Invoke-SafeguardAssetSshHostKeyDiscovery" "Discovered and accepted ssh host key on $($DATA.assetName)"
 
+   
    try {
       foreach ($acctname in $DATA.assetAccounts.GetEnumerator()) {
-         $found = Find-SafeguardAssetAccount -QueryFilter "AssetName eq '$($DATA.assetName)' and Name eq '$acctname'"
+         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.assetName)' and Name eq '$acctname'"
          if ($found) { infoResult "New-SafeguardDirectoryAccount" "$acctname already exists on $($DATA.assetName)" }
          else {
             try {
@@ -100,11 +101,9 @@ try {
    if (-not $assetAccount.Description -contains "Description for") {
       badResult "Edit-SafeguardAssetAccount" "failed for $($DATA.assetName)\$($DATA.assetAccounts[0])"
    }
-
    $found = Find-SafeguardAssetAccount $DATA.assetAccounts[0]
    if ($found) { goodResult "Find-SafeguardAssetAccount" "found $($DATA.assetAccounts[0])" }
    else { badResult "Find-SafeguardAssetAccount" "DID NOT find $($DATA.assetAccounts[0])" }
-
    Test-SafeguardAsset -AssetToTest $DATA.assetName
    goodResult "Test-SafeguardAsset" "Successfully tested assed $($DATA.assetName) (pass or fail)"
 

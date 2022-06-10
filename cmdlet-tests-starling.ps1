@@ -31,16 +31,6 @@ try {
       goodResult "Get-SafeguardStarlingJoinUrl" "Successfully Get-SafeguardStarlingJoinUrl called by Invoke-SafeguardStarlingJoin"
       goodResult "New-SafeguardStarlingSubscription" "Successfully New-SafeguardStarlingSubscription called by Invoke-SafeguardStarlingJoin"
 
-      
-      if ("Y" -eq (Read-Host "Enter Y if your starling account is set up with a 2fa trial")) {
-         $ProviderName= Read-Host "Please enter your ProviderName [A string containing the name to give this new identity provider]"
-         $APiKey = Read-Host "Please enter your ApiKey[A string containing the API Key obtained from Starling 2FA console]"
-         if ("Y" -eq (Read-Host "Enter Y if your wish to make the identity providor $($ProviderName) with the key $($APiKey)")) {
-            New-SafeguardStarling2faAuthentication -ProviderName "$($ProviderName)" -ApiKey "$($APiKey)"
-            goodResult "New-SafeguardStarling2faAuthentication" "Successfully New-SafeguardStarling2faAuthentication"
-         }
-      }
-
       Remove-SafeguardStarlingSubscription -Name "Default" -Force
       goodResult "Remove-SafeguardStarlingSubscription" "Successfully Remove-SafeguardStarlingSubscription"
    }
