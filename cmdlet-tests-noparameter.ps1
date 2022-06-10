@@ -60,7 +60,7 @@ $commands = @{
    GetSafeguardClusterSummary =                     @{cmdName = "Get-SafeguardClusterSummary";};
    GetSafeguardClusterVpnIpv6Address =              @{cmdName = "Get-SafeguardClusterVpnIpv6Address";};
    GetSafeguardCsr =                                @{cmdName = "Get-SafeguardCsr";};
-   GetSafeguardDnsSuffix =                          @{cmdName = "Get-SafeguardDnsSuffix"; cmd = "Get-SafeguardDnsSuffix x0";};
+   GetSafeguardDnsSuffix =                          @{cmdName = "Get-SafeguardDnsSuffix"; cmd = "Get-SafeguardDnsSuffix";};
    GetSafeguardEventName =                          @{cmdName = "Get-SafeguardEventName"; cmd = "(Get-SafeguardEventName) | select -First $DEFAULT_MAXROWS"};
    GetSafeguardHealth =                             @{cmdName = "Get-SafeguardHealth";};
    GetSafeguardPlatform =                           @{cmdName = "Get-SafeguardPlatform"; cmd = "(Get-SafeguardPlatform).DisplayName | select -First $DEFAULT_MAXROWS";};

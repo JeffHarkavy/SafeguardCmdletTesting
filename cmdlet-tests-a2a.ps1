@@ -135,8 +135,6 @@ $newWindowsPolicyStr = '{
   "InvalidConnectionPolicy": false
 }'
 $newWindowsPolicyBody = $newWindowsPolicyStr.Replace("`n", "").Replace("`r", "").Replace(" ", "")
-$newAccessRequestStr = '{"AccountId": #ACCOUNT_ID#,"SystemId": #ASSET_ID#,"AccessRequestType": "SSH"}'
-$newAccessRequestBody = $newAccessRequestStr.Replace("`n", "").Replace("`r", "").Replace(" ", "")
 
 # managedsystem = {'properties':{'PlatformId':547,'NetworkAddress':'sg-2019-ads.sg.lab','Name':'sg-2019-ads'},'fa':{'properties':{'Name':'sb-sa'},'password':'Test1234'},'ma':{'properties':{'Name':'sb-aa1'},'password':'Test1234'}}
 # managedsystem = {'properties':{'PlatformId':270,'NetworkAddress':'sg-ubuntu1904.sg.lab','Name':'sg-ubuntu1904'},'fa':{'properties':{'Name':'root'},'password':'test123'},'ma':{'properties':{'Name':'sb-aa1'},'password':'Test1234'},'sshkey':'data/smoke_ssh_rsa','invalidsymbols':['\n', '\r']}
@@ -202,7 +200,9 @@ function Cleanup {
       }
    }
    Remove-SafeguardUser -UserToDelete $userUsername > $null
-   Remove-SafeguardUser -UserToDelete $certUserName > $null
+   if ($null -ne $certUserName){ 
+		Remove-SafeguardUser -UserToDelete $certUserName > $null
+   }
 
    $allPolicies = Get-SafeguardAccessPolicy
    if ($null -ne $allPolicies) {
@@ -242,7 +242,6 @@ function FindAssetAccount($index) {
       Write-Host "Failed to find the account " $assetsToCreate[$index].AssetAccountDescription
       return
    }
-
    return $accounts[0]
 }
 
@@ -251,23 +250,24 @@ $ready = $true
 try {
    # Create-User
    #region Users
-   
    New-SafeguardUser -NewUserName "Testing" -FirstName "Test" -LastName "ing" -NoPassword -Provider -1 > $null
    $secPassword = "root4EDMZ" | ConvertTo-SecureString -AsPlainText -Force
    Set-SafeguardUserPassword -Password $secPassword -UserToEdit "Testing" > $null
    Edit-SafeguardUser -UserToEdit "Testing" -EmailAddress "blah@test.com" > $null
    $userUsername = Get-SafeguardUser -UserToGet "Testing"
    #endregion
-
+	
    # Create-CertificateUser
    #region Users 
+   infoResult "New-SafeguardUser -Verbose -NewUserName 'cert-safeguard-ps-user' -FirstName 'safeguard' -LastName 'ps-user' -NoPassword -Provider -2 -Thumbprint '2349a0311c312f6dff57875fd2b2a112b8e2c644' > $null"
    New-SafeguardUser -NewUserName "cert-safeguard-ps-user" -FirstName "safeguard" -LastName "ps-user" -NoPassword -Provider -2 -Thumbprint "2349a0311c312f6dff57875fd2b2a112b8e2c644" > $null
    $certUserName = Get-SafeguardUser -UserToGet "cert-safeguard-ps-user"
    #endregion
-
+	
    # Create-AssetAccount
    Write-Host "Create Assets and Accounts"
    foreach ($asset in $assetsToCreate) {
+	  $newAsset = $null
       if ([string]::IsNullOrEmpty($asset.ServiceAccountCredentialType)) {
          $newAsset = New-SafeguardAsset -NetworkAddress $asset.NetworkAddress -Platform $asset.Platform -Description $asset.Description -DisplayName $asset.DisplayName -ServiceAccountCredentialType None -AcceptSshHostKey
       }
@@ -310,10 +310,9 @@ try {
    Write-Host "Create-AccessRequest"
    #region AccessRequest
    $selectedAccount = FindAssetAccount(0)
-   $selectedAsset = Get-SafeguardAsset -AssetToGet $selectedAccount.AssetId
+   $selectedAsset = Get-SafeguardAsset -AssetToGet $selectedAccount.Asset.Id
    $selectedAccount = Get-SafeguardAssetAccount -AccountToGet $selectedAccount.Id
-   $convertedJson = ConvertFrom-Json $newAccessRequestBody.Replace("#ACCOUNT_ID#", $selectedAccount.Id).Replace("#ASSET_ID#", $selectedAsset.Id)
-   $newAccessRequest = Invoke-SafeguardMethod Core Post AccessRequests -Body $convertedJson
+   $newAccessRequest = New-SafeguardAccessRequest $selectedAsset.Id $selectedAccount.Id Ssh
    Get-SafeguardAccessRequest -RequestId $newAccessRequest.Id > $null
    Edit-SafeguardAccessRequest $newAccessRequest.Id InitializeSession  > $null
    Get-SafeguardAccessRequestPassword -RequestId $newAccessRequest.Id > $null

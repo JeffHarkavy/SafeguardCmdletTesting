@@ -99,10 +99,10 @@ $DATA = @{
 
    # Domain information used for testing directory, identity provider, and certificates.
    domainName = "c.sg.lab";
-   netBIOS = "JSHDEVVM";
-   domainAdmin = "madmin-c";
-   domainPassword = "test123" | ConvertTo-SecureString -AsPlainText -Force;
-   directoryAccounts = @("muser-c","muser2-c","muser3-c");
+   netBIOS = "CSG";
+   domainAdmin = "admin-c-ps";
+   domainPassword = "Test1234" | ConvertTo-SecureString -AsPlainText -Force;
+   directoryAccounts = @("ps-user-c-1","ps-user-c-2","ps-user-c-3");
 
    # Certificate Signing Request stuff
    newCsrSubject = "CN=Bedrock,OU=Yabba,O=Dabba";

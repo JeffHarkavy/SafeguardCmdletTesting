@@ -24,7 +24,7 @@ $blockInfo = testBlockHeader $TestBlockName
 try {
    $entUser = createUser $DATA.userUserName
 
-   $entitlement = New-SafeguardEntitlement -Name "$($DATA.entitlementName)" -MemberUsers "$($entUser.UserName)"
+   $entitlement = New-SafeguardEntitlement -Name "$($DATA.entitlementName)" -MemberUsers "$($entUser.Name)"
    goodResult "New-SafeguardEntitlement" "Successfully created entitlement $($entitlement.Name)"
 
    $entitlement = Get-SafeguardEntitlement -EntitlementToGet $DATA.entitlementName
@@ -39,7 +39,7 @@ try {
    }
    try {
       foreach ($acctname in $DATA.assetAccounts.GetEnumerator()) {
-         $found = Find-SafeguardAssetAccount -QueryFilter "AssetName eq '$($DATA.assetName)' and Name eq '$acctname'"
+         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.assetName)' and Name eq '$acctname'"
          if ($found) { infoResult "New-SafeguardDirectoryAccount" "$acctname already exists on $($DATA.assetName)" }
          else {
             try {

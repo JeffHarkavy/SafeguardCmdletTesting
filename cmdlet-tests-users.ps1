@@ -28,24 +28,36 @@ try {
    goodResult "Get-SafeguardUser" "Successfully got $($Data.userUserName)"
 
    Set-SafeguardUserPassword -Password $DATA.secUserPassword -UserToEdit $DATA.userUsername > $null
-   goodResult "Set-SafeguardUserPassword" "$($newUser.UserName) created"
+   goodResult "Set-SafeguardUserPassword" "$($newUser.Name) created"
    $newUser = Edit-SafeguardUser -UserToEdit $DATA.userUsername -EmailAddress $DATA.userEmail
    if (-not $newUser.EmailAddress.Contains($DATA.userEmail)) { badResult "Edit-SafeguardUser" "Email address failed" }
    else { goodResult "Edit-SafeguardUser" "successfully changed email to $($newUser.EmailAddress)" }
 
-   $newUser = Disable-SafeguardUser -UserToEdit $newUser.UserName
-   goodResult "Disable-SafeguardUser" "User $($newUser.UserName) Disabled is $($newUser.Disabled)"
-   $newUser = Enable-SafeguardUser -UserToEdit $newUser.UserName
-   goodResult "Enable-SafeguardUser" "User $($newUser.UserName) Disabled is $($newUser.Disabled)"
-
-   $renamedUser = Rename-SafeguardUser -UserToEdit $newUser.UserName -NewUserName $DATA.renamedUsername
-   if ($renamedUser.UserName -ne $newUser.UserName) {
-      goodResult "Rename-SafeguardUser" "User $($newUser.UserName) renamed to $($renamedUser.UserName)"
-      $newUser = Rename-SafeguardUser -UserToEdit $renamedUser.UserName -NewUserName $newUser.UserName
-      goodResult "Rename-SafeguardUser" "User $($renamedUser.UserName) changed back to to $($newUser.UserName)"
-   }
-   else {
-      badResult "Rename-SafeguardUser" "User $($newUser.UserName) NOT renamed"
+	try{
+		$newUser = Disable-SafeguardUser -UserToEdit $newUser.Name
+		goodResult "Disable-SafeguardUser" "User $($newUser.Name) Disabled is $($newUser.Disabled)"
+	} catch {
+		badResult "Disable-SafeguardUser" "User $($newUser.Name) "  $_
+	}
+	try{
+		$newUser = Enable-SafeguardUser -UserToEdit $newUser.Name
+		goodResult "Enable-SafeguardUser" "User $($newUser.Name) Disabled is $($newUser.Disabled)"
+	} catch {
+		badResult "Enable-SafeguardUser" "User $($newUser.Name) "  $_
+	}
+   
+   try{
+	$renamedUser = Rename-SafeguardUser -UserToEdit $newUser.Name -NewUserName $DATA.renamedUsername
+	if ($renamedUser.Name -ne $newUser.Name) {
+      goodResult "Rename-SafeguardUser" "User $($newUser.Name) renamed to $($renamedUser.Name)"
+      $newUser = Rename-SafeguardUser -UserToEdit $renamedUser.Name -NewUserName $newUser.Name
+      goodResult "Rename-SafeguardUser" "User $($renamedUser.Name) changed back to to $($newUser.Name)"
+	}
+	else {
+		badResult "Rename-SafeguardUser" "User $($newUser.Name) NOT renamed"
+	}
+   } catch {
+		badResult "Rename-SafeguardUser" "User $($newUser.Name) NOT renamed" $_
    }
 
    $foundUser = Find-SafeguardUser $Data.userUserName
@@ -54,29 +66,32 @@ try {
 
    # create a user to delete, restore, and remove
    $delResUser = createUser "delres_$($DATA.userUsername)"
-   Remove-SafeguardUser $delResUser.UserName > $null
-   infoResult "Deleted User" "Successfully created and deleted user for testing Id=$($delResUser.Id) Name=$($delResUser.UserName)"
-
+   try{
+		Remove-SafeguardUser $delResUser.Name > $null
+		infoResult "Deleted User" "Successfully created and deleted user for testing Id=$($delResUser.Id) Name=$($delResUser.Name)"
+	} catch{
+		badResult "Remove-SafeguardUser" "Failed to remove user: '$($delResUser.Name)'." $_
+	}
    try {
-      $delUserList = (Get-SafeguardDeletedUser) | Where-Object {$_.UserName -ieq "$($delResUser.UserName)"}
+      $delUserList = (Get-SafeguardDeletedUser) | Where-Object {$_.Name -ieq "$($delResUser.Name)"}
       goodResult "Get-SafeguardDeletedUser" "Successfully retrieved $($delUserList.Count) deleted users"
    } catch {
-      badResult "Get-SafeguardDeletedUser" "Failed to retrieve deleted user $($delResUser.UserName)"
+      badResult "Get-SafeguardDeletedUser" "Failed to retrieve deleted user $($delResUser.Name)"
    }
 
    try {
       $restored = Restore-SafeguardDeletedUser -UserToRestore $delResUser.Id
-      goodResult "Restore-SafeguardDeletedUser" "Successfully restored deleted user Id=$($delResUser.Id) Name=$($restored.UserName), new Id=$($restored.Id)"
+      goodResult "Restore-SafeguardDeletedUser" "Successfully restored deleted user Id=$($delResUser.Id) Name=$($restored.Name), new Id=$($restored.Id)"
    } catch {
-      badResult "Restore-SafeguardDeletedUser" "Failed to restore deleted user $($delResUser.UserName)"
+      badResult "Restore-SafeguardDeletedUser" "Failed to restore deleted user $($delResUser.Name)"
    }
 
    try {
       Remove-SafeguardUser $restored.Id > $null
       Remove-SafeguardDeletedUser -UserToDelete $restored.Id > $null
-      goodResult "Remove-SafeguardDeletedUser" "Successfully purged deleted user Id=$($restored.Id) Name=$($restored.UserName)"
+      goodResult "Remove-SafeguardDeletedUser" "Successfully purged deleted user Id=$($restored.Id) Name=$($restored.Name)"
    } catch {
-      badResult "Remove-SafeguardDeletedUser" "Failed to purge deleted user Id=$($restored.Id) $($delResUser.UserName)"
+      badResult "Remove-SafeguardDeletedUser" "Failed to purge deleted user Id=$($restored.Id) $($delResUser.Name)"
    }
 } catch {
       badResult "Users general" "Unexpected error in Users test" $_

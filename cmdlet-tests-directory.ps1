@@ -83,12 +83,8 @@ try {
       }
    }
 
-   # TODO
-   # This one keeps failing no matter what gets passed because something is looking for AssetPartitionId
-   # which is not part of the directory object. So, leaving it here with exception handler and
-   # letting it fail for the time being.
    try {
-      $newDirectory = Edit-SafeguardDirectory -DirectoryToEdit $($DATA.domainName) -Description "New Description for $DATA.domainName"
+      $newDirectory = (Edit-SafeguardDirectory -DirectoryToEdit $($DATA.domainName) -Description "New Description for $($DATA.domainName)")
       if ($newDirectory.Description -eq "New Description for $($DATA.domainName)") { goodResult "Edit-SafeguardDirectory" "Successfully edited" }
       else { badResult "Edit-SafeguardDirectory" "Edit failed" }
    } catch {
@@ -101,11 +97,11 @@ try {
    $existingAccounts = Get-SafeguardDirectoryAccount -DirectoryToGet $DATA.domainName -Fields Name
    goodResult "Get-SafeguardDirectoryAccount" "Found $($existingAccounts.Count) accounts"
    foreach ($acctname in $DATA.directoryAccounts.GetEnumerator()) {
-      $found = Find-SafeguardAssetAccount -QueryFilter "AssetName eq '$($DATA.domainName)' and Name eq '$acctname'"
+      $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.domainName)' and Name eq '$acctname'"
       if ($found) { infoResult "New-SafeguardDirectoryAccount" "$acctname already exists on $($DATA.domainName)" }
       else {
          try {
-            $newacct = New-SafeguardDirectoryAccount -ParentDirectory $newDirectory -NewAccountName $acctname
+            $newacct = New-SafeguardDirectoryAccount -ParentDirectory $newDirectory -NewAccountName $acctname -DomainName $DATA.domainName
             goodResult "New-SafeguardDirectoryAccount" "$acctName successfully created on $($DATA.domainName)"
          } catch {
             badResult "New-SafeguardDirectoryAccount" "Unexpected error creating $acctName on $($DATA.domainName)" $_
@@ -113,9 +109,6 @@ try {
       }
    }
 
-   # TODO
-   # Can't get this one to work no matter what
-   # Keep it here and let it "fail" until i figure out wth is going on
    $diracct = Find-SafeguardDirectoryAccount $DATA.directoryAccounts[0]
    if ($diracct) { goodResult "Find-SafeguardDirectoryAccount" "Found directory account $($DATA.directoryAccounts[0])" }
    else { badResult "Find-SafeguardDirectoryAccount" "Did not find directory account $($DATA.directoryAccounts[0])" }
