@@ -38,8 +38,8 @@ try {
       $deletePartitionOwner = $false
    }
 
-   Add-SafeguardAssetPartitionOwner -AssetPartitionToEdit "$($newPartition.name)" -UserList $partitionOwnerUser.UserName > $null
-   goodResult "Add-SafeguardAssetPartitionOwner" "$($newPartition.name) owner set to $($partitionOwnerUser.UserName)"
+   Add-SafeguardAssetPartitionOwner -AssetPartitionToEdit "$($newPartition.name)" -UserList $partitionOwnerUser.Name > $null
+   goodResult "Add-SafeguardAssetPartitionOwner" "$($newPartition.name) owner set to $($partitionOwnerUser.Name)"
    Get-SafeguardAssetPartitionOwner -AssetPartitionToGet "$($newPartition.name)" | format-table
 
    Enter-SafeguardAssetPartition -AssetPartitionToEnter $newPartition.name > $null
@@ -48,13 +48,13 @@ try {
    Exit-SafeguardAssetPartition > $null
    goodResult "Exit-SafeguardAssetPartition" "exited $($newPartition.name)"
    Get-SafeguardCurrentAssetPartition | format-table
-   Remove-SafeguardAssetPartitionOwner -AssetPartitionToEdit "$($newPartition.name)" -UserList $partitionOwnerUser.UserName > $null
-   goodResult "Remove-SafeguardAssetPartitionOwner" "$($newPartition.name) owner removed $($partitionOwnerUser.UserName)"
+   Remove-SafeguardAssetPartitionOwner -AssetPartitionToEdit "$($newPartition.name)" -UserList $partitionOwnerUser.Name > $null
+   goodResult "Remove-SafeguardAssetPartitionOwner" "$($newPartition.name) owner removed $($partitionOwnerUser.Name)"
    Get-SafeguardAssetPartitionOwner -AssetPartitionToGet "$($newPartition.name)" | format-table
 
    if ($deletePartitionOwner) {
       Remove-SafeguardUser -UserToDelete $DATA.partitionOwnerUserName -ErrorAction:SilentlyContinue > $null
-      infoResult "Remove-SafeguardUser" "- removed $($partitionOwnerUser.UserName)"
+      infoResult "Remove-SafeguardUser" "- removed $($partitionOwnerUser.Name)"
    }
    Remove-SafeguardAssetPartition -AssetPartitionToDelete "$($newPartition.name)" > $null
    goodResult "Remove-SafeguardAssetPartition" "$($newPartition.name) removed"

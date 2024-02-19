@@ -135,7 +135,7 @@ $newWindowsPolicyStr = '{
   "InvalidConnectionPolicy": false
 }'
 $newWindowsPolicyBody = $newWindowsPolicyStr.Replace("`n", "").Replace("`r", "").Replace(" ", "")
-$newAccessRequestStr = '{"AccountId": #ACCOUNT_ID#,"SystemId": #ASSET_ID#,"AccessRequestType": "SSH"}'
+$newAccessRequestStr = '{"AccountId": #ACCOUNT_ID#,"AssetId": #ASSET_ID#,"AccessRequestType": "SSH"}'
 $newAccessRequestBody = $newAccessRequestStr.Replace("`n", "").Replace("`r", "").Replace(" ", "")
 
 # managedsystem = {'properties':{'PlatformId':547,'NetworkAddress':'sg-2019-ads.sg.lab','Name':'sg-2019-ads'},'fa':{'properties':{'Name':'sb-sa'},'password':'Test1234'},'ma':{'properties':{'Name':'sb-aa1'},'password':'Test1234'}}
@@ -310,13 +310,27 @@ try {
    Write-Host "Create-AccessRequest"
    #region AccessRequest
    $selectedAccount = FindAssetAccount(0)
-   $selectedAsset = Get-SafeguardAsset -AssetToGet $selectedAccount.AssetId
+   $selectedAsset = Get-SafeguardAsset -AssetToGet $selectedAccount.Asset.Id
+   
+   Write-Host "Create-AccessRequest 2"
    $selectedAccount = Get-SafeguardAssetAccount -AccountToGet $selectedAccount.Id
+   
+   Write-Host "Create-AccessRequest 3"
    $convertedJson = ConvertFrom-Json $newAccessRequestBody.Replace("#ACCOUNT_ID#", $selectedAccount.Id).Replace("#ASSET_ID#", $selectedAsset.Id)
+   
+   Write-Host "Create-AccessRequest 4"
    $newAccessRequest = Invoke-SafeguardMethod Core Post AccessRequests -Body $convertedJson
+   
+   Write-Host "Create-AccessRequest 5"
    Get-SafeguardAccessRequest -RequestId $newAccessRequest.Id > $null
+   
+   Write-Host "Create-AccessRequest 6"
    Edit-SafeguardAccessRequest $newAccessRequest.Id InitializeSession  > $null
+   
+   Write-Host "Create-AccessRequest 7"
    Get-SafeguardAccessRequestPassword -RequestId $newAccessRequest.Id > $null
+   
+   Write-Host "Create-AccessRequest 8"
    $updatedAccessRequest = Get-SafeguardAccessRequest -RequestId $newAccessRequest.Id
    if ($updatedAccessRequest.State -eq "RequestAvailable") {
       Edit-SafeguardAccessRequest $updatedAccessRequest.Id Cancel -ErrorAction SilentlyContinue > $null

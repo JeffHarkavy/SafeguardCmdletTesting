@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LicenseFile>
     <Licenses>
-        <License Generator="File" GeneratorVersion="3.0" Signature="68D7085C28CD1C24CC40D849E524EF5C7D8753F40446B4FF0163B5FF792982DD7EC25CFB9FE6257978912B7150839CDB66EEB74F393C51A8F08DCC39AAC3910B">
-            <ProductName>Safeguard for Privileged Passwords Desktop/System</ProductName>
-            <ProductVersion>2</ProductVersion>
+        <License Generator="File" GeneratorVersion="3.0" Signature="4690478086A1E1738D117585DF1DF415569CF1C03B279025C6A1428ECA1EF62D5222BA40A8AABB5071D7A82687A2DEB60BA3D4629A1B52185D47A3D06D47D806">
+            <Enterprise>true</Enterprise>
+            <LicenseNumber>234-567-890</LicenseNumber>
             <LicenseType>Perpetual</LicenseType>
-            <LicenseNumber>123-456-000</LicenseNumber>
-            <Desktops>100</Desktops>
-            <Systems>10</Systems>
+            <ProductName>Safeguard for Privileged Passwords</ProductName>
+            <ProductVersion>7</ProductVersion>
         </License>
     </Licenses>
 </LicenseFile>

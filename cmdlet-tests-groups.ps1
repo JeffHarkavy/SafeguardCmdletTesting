@@ -83,7 +83,7 @@ try {
       }
 
       Add-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.userUsername > $null
-      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
+      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).Name
       if ($DATA.userUsername -in $groupMembers) {
          goodResult "Add-SafeguardUserGroupMember" "$($DATA.userUsername) successfully added to $($userGroup.Name)"
       }
@@ -101,7 +101,7 @@ try {
       }
 
       Edit-SafeguardUserGroup -GroupToEdit $userGroup.Name -UserList $DATA.userUsername -Operation add > $null
-      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
+      $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).Name
       if ($DATA.userUsername -in $groupMembers) {
          goodResult "Edit-SafeguardUserGroup" "$($DATA.userUsername) successfully edited to add to $($userGroup.Name)"
       }
