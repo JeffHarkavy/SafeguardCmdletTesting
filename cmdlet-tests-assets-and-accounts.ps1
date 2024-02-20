@@ -75,7 +75,7 @@ try {
 
    try {
       foreach ($acctname in $DATA.assetAccounts.GetEnumerator()) {
-         $found = Find-SafeguardAssetAccount -QueryFilter "AssetName eq '$($DATA.assetName)' and Name eq '$acctname'"
+         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.assetName)' and Name eq '$acctname'"
          if ($found) { infoResult "New-SafeguardDirectoryAccount" "$acctname already exists on $($DATA.assetName)" }
          else {
             try {
@@ -106,7 +106,7 @@ try {
    else { badResult "Find-SafeguardAssetAccount" "DID NOT find $($DATA.assetAccounts[0])" }
 
    Test-SafeguardAsset -AssetToTest $DATA.assetName
-   goodResult "Test-SafeguardAsset" "Successfully tested assed $($DATA.assetName) (pass or fail)"
+   goodResult "Test-SafeguardAsset" "Successfully tested asset $($DATA.assetName) (pass or fail)"
 
    $randpwd = New-SafeguardAssetAccountRandomPassword -AssetToUse $DATA.assetName -AccountToUse $DATA.assetAccounts[0]
    goodResult "New-SafeguardAssetAccountRandomPassword" "Successfully created password for $($DATA.assetName)\$($DATA.assetAccounts[0]) $randpwd"
