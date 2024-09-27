@@ -1,25 +1,19 @@
-﻿# ############################################################################
-# You may need/want to change these based on your shell color settings
-# ############################################################################
-$bgcolor = (get-host).ui.rawui.backgroundcolor
-$COLORS = @{
-   # used for general info messages
-   info      = @{back="$bgcolor"; fore="Cyan";};
-   # used for good / bad test results
-   bad       = @{back="$bgcolor"; fore="Red";};
-   good      = @{back="$bgcolor"; fore="DarkGreen";};
-   # highlighted output
-   highlight = @{back="$bgcolor"; fore="DarkRed";};
-   # for processes that use Write-Progress (patch, cluster, etc.)
-   # this will help powershells stupid progress bar stand out.
-   # If you want to use the standard colors then set the values to
-   # $host.privatedata.ProgressBackgroundColor/ProcessForegroundColor
-   # or just comment out the following line.
-   progress  = @{back="Black";    fore="White";};
+﻿if ($null -eq $GLOBALS) {
+  Write-Host -ForegroundColor Red "Must process harness-globals.ps1 first!"
+  exit
 }
 
-# Maybe someday ps will get the ternary operator, but until then...
-Function iif($If, $Right, $Wrong) { If ($If) {$Right} Else {$Wrong} }
+# write output using hashes from the GLOBALS.COLORS object
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name writeHostColor -Value {
+  param($color, $message, $nonewline)
+  $color = ifIsNull $color @{ForegroundColor=$GLOBALS.fgcolor; BackgroundColor=$GLOBALS.bgcolor;}
+  $nonewline = ifIsNull $nonewline $false
+  if ($message -is [Array]) {
+     ($message | join "`n") | Write-Host @color 
+  } else {
+     $message | Write-Host -NoNewLine:($nonewline) @color
+  }
+};
 
 # Writes begin/end header blocks for groups of tests
 #
@@ -34,182 +28,340 @@ Function iif($If, $Right, $Wrong) { If ($If) {$Right} Else {$Wrong} }
 #
 # returns - for a "begin" header it returns a startInfo object which must
 #           be passed in when writing the "end" header
-function testBlockHeader($hdrText,$startInfo) {
-   $time = get-date
-   $newInfo = $null
-   if ($null -eq $startInfo -or $startInfo.GetType().Name -eq "Int32") {
-      $newInfo = @{
-         startTime = $time;
-         startGood = $resultCounts.Good + 0; 
-         startBad = $resultCounts.Bad + 0;
-         expected = $startInfo;
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name testBlockHeader -Value {
+   param($startInfo, $final)
+   $final = ifIsNull $final $false
+
+   if ($null -eq $startInfo) {
+      $hdrText = ifIsNull $GLOBALS.currentTest.TestBlockName "Start Test"
+      $startInfo = $null
+   } elseif ($startInfo.GetType().Name -eq "String") {
+      $hdrText = $startInfo
+      $startInfo = $null
+   } else {
+      $hdrText = $startInfo.blockName
+   }
+
+   $currentTime = get-date
+   if ($null -eq $startInfo) {
+      $startInfo = @{
+         startTime = $currentTime;
+         startGood = $GLOBALS.resultCounts.Good + 0; 
+         startBad = $GLOBALS.resultCounts.Bad + 0;
+         startWarning = $GLOBALS.resultCounts.Warning + 0;
+         startSkipped = $GLOBALS.resultCounts.Skipped + 0;
+         expected = ifIsNull $GLOBALS.currentTest.testCount 0;
+         blockName = $hdrText;
       }
       $doReturn = $true
       $beginOrEnd = "BEGIN"
    } else {
       $beginOrEnd = "END"
    }
-   $blockline = "+==========================================================================+"
+   $blockline =      "+==========================================================================+"
+   $blockseparator = "+--------------------------------------------------------------------------+"
    $fmt = "| {0,-" + ($blockline.Length - 3) + "}|"
-   $hdrText = "$beginOrEnd $hdrText"
-   $stamp = "{0:MM}-{0:dd}-{0:yyyy} {0:HH}:{0:mm}:{0:ss}.{0:fff}" -f ($time)
+   $hdrText = "$beginOrEnd $($startInfo.blockName)"
+   $stamp = "{0:MM}-{0:dd}-{0:yyyy} {0:HH}:{0:mm}:{0:ss}.{0:fff}" -f ($currentTime)
    write-host ""
    write-host $blockline
    foreach ($ln in $hdrText.Split([Environment]::NewLine)) {
       $padding = (([Math]::Max(0, $blockline.Length / 2) - [Math]::Floor($ln.Length / 2)) - 1)
       write-host ("|{0}{1}{2}|" -f (' ' * $padding), $ln, (' ' * ($padding-($hdrText.Length %2))))
    }
+   write-host $blockseparator
    write-host ("$fmt" -f $stamp)
-   if ($newInfo.expected) {
-     write-host -ForegroundColor $COLORS.info.fore -BackgroundColor $COLORS.good.back ("$fmt" -f ("Expected: $($newInfo.expected)"))
+   if ($startInfo.expected) {
+     write-host $blockseparator
+     $GLOBALS.writeHostColor($GLOBALS.COLORS.info, ("$fmt" -f ("Expected: $($startInfo.expected)")))
    }
    if ('end' -eq $beginOrEnd) {
-      $span = New-Timespan -Start $startInfo.startTime -End $time
-      write-host ("$fmt" -f ("Elapsed: $($span.TotalSeconds) seconds"))
-      if ($startInfo.expected) {
-        write-host -ForegroundColor $COLORS.info.fore -BackgroundColor $COLORS.good.back ("$fmt" -f ("Expected: $($startInfo.expected)"))
+      $span = New-Timespan -Start $startInfo.startTime -End $currentTime
+      if ($span.TotalSeconds -le 100) {
+         $elapsed = "$($span.TotalSeconds) seconds"
+      } else {
+         $elapsed = "{0:HH:mm:ss.fff}" -f ([datetime]$span.Ticks)
       }
-      write-host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back ("$fmt" -f ("Good: $($($resultCounts.Good) - $($startInfo.startGood))"))
-      write-host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back ("$fmt" -f ("Bad: $($($resultCounts.Bad) - $($startInfo.startBad))"))
+      write-host ("$fmt" -f ("Elapsed: $elapsed"))
+      write-host $blockseparator
+      if ($startInfo.expected) {
+        $GLOBALS.writeHostColor($GLOBALS.COLORS.info, ("$fmt" -f ("Expected: $($startInfo.expected)")))
+      }
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.info, ("$fmt" -f ("Skipped: $($($GLOBALS.resultCounts.Skipped) - $($startInfo.startSkipped))")))
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.good, ("$fmt" -f ("Good: $($($GLOBALS.resultCounts.Good) - $($startInfo.startGood))")))
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.warning, ("$fmt" -f ("Warning: $($($GLOBALS.resultCounts.Warning) - $($startInfo.startWarning))")))
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, ("$fmt" -f ("Bad: $($($GLOBALS.resultCounts.Bad) - $($startInfo.startBad))")))
+      if ($final -and $GLOBALS.createLog) {
+         $GLOBALS.writeHostColor($GLOBALS.COLORS.info, ("$fmt" -f "Transcript: logs/$($DATA.logName) "))
+      }
+
+      $GLOBALS.currentTest = $null
    }
    write-host $blockline
  
-   if ($doReturn) {return $newInfo}
-}
+   if ($doReturn) {return $startInfo}
+};
 
 # simpler header used to flag some individual tests
-function writeCallHeader($cmd) {
-   write-host "`n--------------------------------------------------"
-   foreach ($l in $cmd.Split([Environment]::NewLine)) {
-      write-host "-- $l"
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name writeCallHeader -Value {
+   param($cmd, $color)
+
+   $cmd = iif $($cmd -eq "cleanup") "$($GLOBALS.currentTest.TestBlockName) Cleanup" $cmd
+   $GLOBALS.writeHostColor($color, "`n--------------------------------------------------");
+   foreach ($l in $cmd.Split("`n")) {
+      $GLOBALS.writeHostColor($color, "-- $l");
    }
-   write-host "--------------------------------------------------"
+   $GLOBALS.writeHostColor($color, "--------------------------------------------------");
+};
+
+# good/info/bad/warning/skip result writers argHash
+# minVerbosity - minimum verbosity setting for writing. 0 or $null will always write.
+#                Even if we don't write an error because of verbosity settings the
+#                global resultCounts will still be updated and, in the case of "bad",
+#                the error will still be collected for display at the end.
+# cmd       - command / test name. If $null is passed it will default to the current test short name
+# str       - message
+# extra     - extra information (e.g., command output)
+# ex        - optional exception that was thrown for an error situation.
+#             Will pull script line number and message for output,
+# skipCount - number of tests being skipped (default == 1)
+# timing    - a hash table of {startTime=X; endTime=Y} that will include an "Elapsed" message
+#              in the output. if endTime is null/not there the current time will be used.
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name goodResult -Value {
+   param ($argHash)
+   $GLOBALS.resultWriter($GLOBALS.buildRwHash($argHash, $GLOBALS.COLORS.good, "SUCCESS"))
+   $GLOBALS.resultCounts.Good++
 }
 
-# good/info/bad result writers
-# $cmd - command / test name
-# $str - extra information
-# $ex  - optional exception that was thrown for an error situation.
-#        Will pull script line number and message for output
-function goodResult($cmd, $str) {
-   Write-Host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back "$($cmd) : $($str)"
-   $resultCounts.Good++
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name skipResult -Value {
+   param ($argHash)
+   $GLOBALS.resultWriter($GLOBALS.buildRwHash($argHash, $GLOBALS.COLORS.warning, "WARNING"))
+   $GLOBALS.resultCounts.Skipped += (ifIsNull $skipCount 1)
 }
 
-function infoResult($cmd, $str) {
-   Write-Host -ForegroundColor $COLORS.info.fore -BackgroundColor $COLORS.info.back "$($cmd) : $($str)"
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name warningResult -Value {
+   param ($argHash)
+   $GLOBALS.resultWriter($GLOBALS.buildRwHash($argHash, $GLOBALS.COLORS.warning, "WARNING"))
+   $GLOBALS.resultCounts.Warning++
 }
 
-function badResult($cmd, $str, $ex) {
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name infoResult -Value {
+   param ($argHash)
+   $GLOBALS.resultWriter($GLOBALS.buildRwHash($argHash, $GLOBALS.COLORS.info, "INFO"))
+}
+
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name badResult -Value {
+   param ($argHash)
+   $rwHash = $GLOBALS.buildRwHash($argHash, $GLOBALS.COLORS.bad, "FAIL")
+   $GLOBALS.resultWriter($rwHash)
+
+   $GLOBALS.collectedErrors.Add("$(ifIsNull $GLOBALS.currentTest.TestBlockName "No Current Test") : $($rwHash.cmd) : $($rwHash.message)") > $null
+   $GLOBALS.resultCounts.Bad++
+};
+
+# a worker for populating extra information in the argHash passed to the *Result calls
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name buildRwHash -Value {
+   param($argHash, $colors, $messageType)
+
    $exMsg = ""
-   if ($null -ne $ex.Exception) {
-      $exMsg = " - L:$($ex.InvocationInfo.ScriptLineNumber) $($ex.Exception.Message)"
+   if ($null -ne $argHash.ex.Exception) {
+      $exMsg = " - L:$($argHash.ex.InvocationInfo.ScriptLineNumber) $($argHash.ex.Exception.Message)"
    }
-   $outputLine = "$($cmd) : $($str)$($exMsg)"
-   Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back $outputLine
-   $collectedErrors.Add($outputLine) > $null
-   $resultCounts.Bad++
+
+   $argHash.colors = ifIsNull $argHash.colors $colors
+   $argHash.messageType = ifIsNull $argHash.messageType $messageType
+   $argHash.message += $exMsg
+   # use HH:mm:ss if you'd rather display it as 24-hour time
+   $argHash.message = $argHash.message -replace '%time%', (Get-Date -format 'hh:mm:ss tt')
+
+   $argHash.cmd = ifIsNull $argHash.cmd $GLOBALS.currentTest.TestBlockShortName
+   return $argHash
 }
+
+# a worker function for the result output writers
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name resultWriter -Value {
+   param ($parm)
+   $cmd = ifIsNull $parm.cmd $GLOBALS.currentTest.TestBlockShortName
+   $colors = $parm.colors
+
+   $elapsed = ""
+   if ($null -ne $parm.timing -and $null -ne $parm.timing.startTime) {
+      $span = New-Timespan -Start $parm.timing.startTime -End (ifIsNull $parm.timing.endTime (Get-Date))
+      $elapsed = " (Elapsed $("{0:HH:mm:ss.fff}" -f ([datetime]$span.Ticks)))"
+   }
+   $message = "$cmd : $($parm.messageType.toUpper())$($elapsed) : $($parm.message)"
+
+   if ($GLOBALS.Verbosity -ge (ifIsNull $parm.minVerbosity -1)) {
+      Write-Host @colors "$message"
+      if ($null -ne $parm.extra) {
+         if ($parm.extra -is [Array]) {
+            ($parm.extra | join "`n") | Write-Host @colors 
+         } else {
+            Write-Host @colors "$($parm.extra)"
+         }
+      }
+   }
+};
+
+# A common Format-Table output for result sets
+# Default number of rows to output is $DATA.defaultFormatTableLineCount
+# $maxLines > 0  - show first X lines
+# $maxLines < 0  - show last X lines
+# $maxLines == 0 - show all lines
+# Verbosity s/b set to 2 to show default table output
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name formatTable -Value {
+   param ($argHash)
+   $argHash.minVerbosity = ifIsNull $argHash.minVerbosity 2
+
+   if ($GLOBALS.Verbosity -ge $arghash.minVerbosity -and $null -ne $arghash.output) {
+      $argHash.maxLines = ifIsNull $argHash.maxLines $DATA.defaultFormatTableLineCount
+      $propertySplat = ifIsNull $arghash.properties @{ Property='*'; }
+
+      $arghash.maxLines = ifIsNull $arghash.maxLines $DATA.defaultFormatTableLineCount
+      if ($arghash.maxLines -eq 0) {
+         $arghash.output | Format-Table @propertySplat
+      } elseif ($arghash.maxLines -gt 0) {
+         if ($arghash.output.count -gt $arghash.maxLines) {
+            $GLOBALS.writeHostColor($GLOBALS.COLORS.info, "Showing first $($arghash.maxLines) of $($arghash.output.Count) lines")
+         }
+         $arghash.output | Select -First $arghash.maxLines | Format-Table @propertySplat
+      } else {
+         $arghash.maxLines *= -1
+         if ($arghash.output.count -gt $arghash.maxLines) {
+            $GLOBALS.writeHostColor($null, "Showing last $($arghash.maxLines) of $($arghash.output.Count) lines")
+         }
+         $arghash.output | Select -Last $arghash.maxLines | Format-Table @propertySplat
+      }
+   }
+};
 
 # Displays the script help and exits
-function showHelp {
-   Write-Host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back "
---- Running Selected or All tests ---
-  - Invoke with argument of showdata to see current values used across all tests
-  - Invoke with no arguments or the single argument all to run all commands.
-  - Some tests are not included in the ""all commands"" run and must be specifically requested.
-    These tests can be run individually or pass ""allexplicit"" to run all of them at once.
-  - Invoke with a space-delimited list of test names to run individual tests.
-    Test names do not have to be exact, but must be non-ambiguous.
-  - Pass LTS or Feature or Other:ipaddress to change test targets. Tests LTS branch by default.
-    Other will not test patch or cluster.
-  - Pass Log or NoLog to turn transcript logging on or off (default is Off)
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name showHelp -Value {
+   param ($commandsOnly = $false)
 
-  Valid test names are (in order of execution): "
-  (($Tests.GetEnumerator() | Where-Object {$explicitTestKeys -notcontains $_.Key}) | Sort {$_.Value.Seq}) | `
-     foreach-object { 
-        Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back `
-        ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($_.Value.interactive -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" ""))
+   if (!$commandsOnly) {
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.white, "`
+   --- Running Selected or All tests ---`
+     - Invoke with argument of showdata to see current values used across all tests`
+     - Invoke with no arguments or the single argument all to run all commands.`
+     - Some tests are not included in the ""all commands"" run and must be specifically requested.`
+       These tests can be run individually or pass ""allexplicit"" to run all of them at once.`
+     - Invoke with a space-delimited list of test names to run individual tests.`
+       Test names are matched 'begins with' the test name entered.
+     - Pass LTS or Feature or Other:ipaddress to change test targets. Tests LTS branch by default.`
+       Other will not test patch or cluster.`
+     - Pass Log or NoLog to turn transcript logging on or off (default is Off)");
+  }
+
+  $GLOBALS.writeHostColor($GLOBALS.COLORS.good, "`n  Valid test names are (in order of execution, test counts are approximate): ")
+  $local:header = ('    {0,-20} {1,5}  {2}' -f "Test Name","Count","Description") + "`n" + ('    {0,-20} {1,5}  {2}' -f $('='*20),$('='*5),$('='*50))
+  $GLOBALS.writeHostColor($GLOBALS.COLORS.white, $local:header)
+  (($DATA.tests.GetEnumerator() | Where-Object {$explicitTestKeys -notcontains $_.Key}) | Sort {$_.Value.Seq}) | `
+     foreach-object {
+        $GLOBALS.writeHostColor($GLOBALS.COLORS.white, `
+        ('    {0,-20} {1,5}  {2}' -f $_.Key,(iif $_.Value.testCount $_.Value.testCount 'n/a'),$_.Value.Description + (iif ($_.Value.interactive -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" "")))
      }
   Write-Host ""
-  Write-Host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back "  The following tests must be individually requested or ""allexplicit"" must be specified:"
-  (($Tests.GetEnumerator() | Where-Object {$explicitTestKeys -contains $_.Key}) | Sort {$_.Value.Seq}) | `
-     foreach-object { 
-        Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back `
-        ('    {0,-20} - {1}' -f $_.Key,$_.Value.Description + (iif ($_.Value.interactive -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" ""))
+  $GLOBALS.writeHostColor($GLOBALS.COLORS.good, "  The following tests must be individually requested or ""allexplicit"" must be specified:")
+  $GLOBALS.writeHostColor($GLOBALS.COLORS.white, $local:header)
+  (($DATA.tests.GetEnumerator() | Where-Object {$explicitTestKeys -contains $_.Key}) | Sort {$_.Value.Seq}) | `
+     foreach-object {
+        $GLOBALS.writeHostColor($GLOBALS.COLORS.white, `
+        ('    {0,-20} {1,5}  {2}' -f $_.Key,(iif $_.Value.testCount $_.Value.testCount 'n/a'),$_.Value.Description + (iif ($_.Value.interactive -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" "")))
      }
   Write-Host ""
   Write-Host "    (1) - Test may require human interaction."
   Write-Host "    (2) - Work-In-Progress. May not do much yet."
   Write-Host ""
-
-  exit
-}
+};
 
 # Writes out current values of the $DATA hashtable and exits
-function showData {
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name showData -Value {
    $spacing = (write-output ("`n{0,32}" -f " "))
 
-   Write-Host -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back ("`n{0,-30}  {1}" -f "--- Name ---","--- Value ---")
+   $GLOBALS.writeHostColor($GLOBALS.COLORS.good, ("`n{0,-30}  {1}" -f "--- Name ---","--- Value ---"))
    foreach ($k in ($DATA.GetEnumerator() | Sort {$_.Key})) {
-      Write-Host -NoNewLine -ForegroundColor $COLORS.good.fore -BackgroundColor $COLORS.good.back ('{0,-30}= ' -f $k.Key)
+      Write-Host -NoNewLine @COLORS_good ('{0,-30}= ' -f $k.Key)
       if ($null -eq $k.Value) {
-         Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back "null"
+         $GLOBALS.writeHostColor($GLOBALS.COLORS.highlight, "null")
          continue
       }
       $tname = $k.Value.GetType().Name
       if ($tname -ieq "hashtable") {
          # break out the pieces of the hashtable. no, it's not recursive so if
          # the hash has another hash or an array ... tough.
-         Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back ("@{{$($spacing)  {0};$spacing}}" -f (($k.Value.Keys|foreach {"${_}: $($k.Value[$_])"}) -join ";$spacing  "))
+         $GLOBALS.writeHostColor($GLOBALS.COLORS.highlight, ("@{{$($spacing)  {0};$spacing}}" -f (($k.Value.Keys|foreach {"${_}: $($k.Value[$_])"}) -join ";$spacing  ")))
       } elseif ($tname -match "\[\]$") {
          # join the members of the array in a CSV list inside brackets
-         Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back ('[{0}]' -f ($k.Value -join ', '))
+         $GLOBALS.writeHostColor($GLOBALS.COLORS.highlight, ('[{0}]' -f ($k.Value -join ', ')))
       } else {
          # just print whatever's there. Things like SecureStrings will just print the type name.
-         Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back ('{0}' -f $k.Value)
+         $GLOBALS.writeHostColor($GLOBALS.COLORS.highlight, ('{0}' -f $k.Value))
       }
    }
    Write-Host ""
-
-   exit
-}
+};
 
 # Create a user and return the object.
 # Assumes connect has already been done.
-function createUser($uname) {
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name createUser -Value {
+   param ($userInput)
+
+   $local:uname = ""
+   $local:isNew = $true
+   $local:newUser = $null
    try {
-      $user = Find-SafeguardUser -QueryFilter "Name ieq '$uname'"
-      if ($user) {
-         infoResult "Find-SafeguardUser" "$($user.Name) already exists"
+      if ($userInput.GetType().Name -eq "String") {
+         $local:uname = $userInput
       } else {
-         $user = New-SafeguardUser -NewUserName $uname -FirstName "Safeguard-ps" -LastName "User" -NoPassword -Provider -1
-         goodResult "New-SafeguardUser" "$($user.Name) created"
+         $local:uname = $userInput.UserName
+      }
+      $local:newUser = Find-SafeguardUser -QueryFilter "Name ieq '$local:uname'"
+      if ($local:newUser) {
+         $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardUser"; message = "$($local:newUser.Name) already exists"; })
+         $local:isNew = $false
+      } else {
+         if ($userInput.GetType().Name -eq "String") {
+            $local:newUser = New-SafeguardUser -NewUserName $local:uname -FirstName "Safeguard-ps" -LastName "User" -NoPassword -Provider -1
+         } else {
+            $local:newUser = New-SafeguardUser -NewUserName $userInput.UserName -FirstName $userInput.FirstName -LastName $userInput.LastName -Password $userInput.SecPassword -Provider $userInput.IdProvider
+         }
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardUser"; message = "$($local:newUser.Name) created"; })
       }
    }
    catch {
-      badResult "createUser" "Unexpected error fetching or creating $uname" $_.Exception
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "createUser"; message = "Unexpected error fetching or creating $local:uname"; ex =$_.Exception; })
       throw $_.Exception
    }
 
-   return $user
-}
+   return @{isNew = $local:isNew; newUser = $local:newUser}
+};
 
 # Not strictly necessary, but it does make working from the command line a little easier
-function sgConnect($appliance,$getToken) {
-   $appliance = iif ($null -eq $appliance) $DATA.appliance $appliance
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name sgConnect -Value {
+   param ($appliance,$user,$getToken)
+
+   $appliance = ifIsNull $appliance $DATA.appliance
+   $user = ifIsNull $user @{
+      IdProvider = $DATA.idProvider;
+      SecPassword = $DATA.secPassword;
+      UserName = $DATA.userName;
+   }
+
    if ($getToken) {
-      $token = Connect-Safeguard -Appliance $appliance -IdentityProvider $DATA.idProvider -Password $DATA.secPassword -Username $DATA.userName -Insecure -NoSessionVariable
-      infoResult "Recevied Access Token" $appliance
+      $token = Connect-Safeguard -Appliance $appliance -IdentityProvider $user.idProvider -Password $user.secPassword -Username $user.userName -Insecure -NoSessionVariable
+      $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Recevied Access Token for user $($user.UserName)"; message = $appliance; })
       return $token
    } else {
-      Connect-Safeguard -Appliance $appliance -IdentityProvider $DATA.idProvider -Password $DATA.secPassword -Username $DATA.userName -Insecure
-      infoResult "Connected to" $appliance
+      Connect-Safeguard -Appliance $appliance -IdentityProvider $user.idProvider -Password $user.secPassword -Username $user.userName -Insecure
+      $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Connected to"; message = $appliance; })
    }
-}
+};
 
 # Sets harness-wide variables to point at either the LTS or Feature branch appliances
-function setTestBranch($branch) {
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name setTestBranch -Value {
+   param ($branch)
+
    if ($branch -ieq "LTS") {
       $DATA.appliance = $DATA.applianceLTS
       $DATA.clusterPrimary = $DATA.clusterPrimaryLTS;
@@ -227,42 +379,46 @@ function setTestBranch($branch) {
       $DATA.clusterSession = @();
    }
 
-   foreach ($dir in $DATA.outputPaths.GetEnumerator()) {
+   # Make sure all the various filePaths directories exist
+   foreach ($dir in $DATA.filePaths.GetEnumerator()) {
       if (-not (Test-Path $dir.Value -PathType Container)) {
          New-Item -Path $dir.Value -ItemType Directory > $null
       }
    }
 
    return $DATA.appliance
-}
+};
 
 # What it says.
-function formatSgVersion($v,$includeBuild) {
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name formatSgVersion -Value {
+   param ($v,$includeBuild)
+
    return $v.Major.toString() + "." + `
           $v.Minor.toString() + "." + `
           (iif $v.ServicePack $v.ServicePack $v.Revision).toString() + `
           (iif $includeBuild ("." + (iif $v.HotfixLevel $v.HotfixLevel $v.Build).toString()) "");
-}
+};
 
 # If users wants output logged this will start a transcript in the logs directory.
 # It will only keep the most recent "maxLogs" (see harness-data.ps1), including the
 # one being started.
-function startTranscribing {
-   if ($DATA.createLog -eq $true) {
-      if (-not (Test-Path $DATA.outputPaths.logs -PathType Container)) {
-         New-Item -Path $DATA.outputPaths.logs -ItemType Directory > $null
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name startTranscribing -Value {
+
+   if ($GLOBALS.createLog -eq $true) {
+      if (-not (Test-Path $DATA.filePaths.logs -PathType Container)) {
+         New-Item -Path $DATA.filePaths.logs -ItemType Directory > $null
       }
 
-      while ((Get-ChildItem "$($DATA.outputPaths.logs)\*.log").Count -ge $DATA.maxLogs) {
-         infoResult "Removing Log" "$(Get-ChildItem "$($DATA.outputPaths.logs)\*.log" | Sort CreationTime | Select -First 1)"
-         Get-ChildItem "$($DATA.outputPaths.logs)\*.log" | Sort CreationTime | Select -Last 1 | Remove-Item
+      while ((Get-ChildItem "$($DATA.filePaths.logs)\$($BASE_NAME)_*.log").Count -ge $DATA.maxLogs) {
+         $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Removing Log"; message = "$(Get-ChildItem "$($DATA.filePaths.logs)\*.log" | Sort CreationTime | Select -First 1)"; })
+         Get-ChildItem "$($DATA.filePaths.logs)\*.log" | Sort CreationTime | Select -Last 1 | Remove-Item
       }
 
-      Start-Transcript -Path "$($DATA.outputPaths.logs + $DATA.logName)"
+      Start-Transcript -Path "$($DATA.filePaths.logs + $DATA.logName)"
 
    }
-   return $DATA.createLogs
-}
+   return $GLOBALS.createLog
+};
 
 # For any test blocks that cause Write-Progress bars to be displayed
 # (e.g., patch and cluster) this can be used to make the progress bar
@@ -272,7 +428,9 @@ function startTranscribing {
 # as a hashmap {bg="color";fg="color"}
 # Call it from the test's "finally" block with that hashmap to reset
 # colors back to what they were.
-function setProgressBarColors($oldvalues) {
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name setProgressBarColors -Value {
+   param ($oldvalues)
+
    if ($null -eq $oldvalues) {
       $oldvalues = @{ bg = $host.privatedata.ProgressBackgroundColor; fg = $host.privatedata.ProgressForegroundColor; }
 
@@ -286,5 +444,238 @@ function setProgressBarColors($oldvalues) {
       $host.privatedata.ProgressBackgroundColor = $oldvalues.bg;
       $host.privatedata.ProgressForegroundColor = $oldvalues.fg;
    }
+};
+
+# Reduces an object to a simple MD5 hash. Not intended to be crypto secure,
+# just for comparing objects.
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name hashString -Value {
+   param ($string)
+
+   $stringAsStream = [System.IO.MemoryStream]::new()
+   $writer = [System.IO.StreamWriter]::new($stringAsStream)
+   $writer.write($string)
+   $writer.Flush()
+   $stringAsStream.Position = 0
+   $result = (Get-FileHash -Algorithm MD5 -InputStream $stringAsStream).Hash
+
+   return $result
 }
+
+# Returns an alternative value if the string is null or empty
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name emptyElse -Value {
+   param ($string, $alternative)
+
+   if ($null -eq $string -or $string -eq "") {
+      $string = $alternative
+   }
+
+   return $string
+}
+
+# Returns an alternative value if the string is null or empty
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name deepClone -Value {
+    param($InputObject)
+    process
+    {
+        if($InputObject -is [hashtable]) {
+            $clone = @{}
+            foreach($key in $InputObject.keys)
+            {
+                $clone[$key] = $GLOBALS.deepClone($InputObject[$key])
+            }
+            return $clone
+        } else {
+            return $InputObject
+        }
+    }
+}
+
+# Does what it says. Process the command line, checks PS version and SSH paths,
+# makes sure keys are in place and key users "work" and all that good stuff.
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name initializeEnvironment -Value {
+   param($whichTests)
+   $whichTests = ifIsNull $whichTests $DATA.Tests
+
+   if ($null -eq $allParameters -or $allParameters.Count -eq 0) {
+      $allParameters = @("all")
+   }
+
+   if ($allParameters -contains "all" -and $allParameters -contains "allexplicit") {
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.highlight, "ALLEXPLICIT takes precedence over ALL. Only ALLEXPLICIT will be run.")
+   }
+
+   $global:testBranch = "LTS"
+   if (($allParameters -match "^(lts|(other:)|feature)").length -gt 1) {
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "Can not specify more than one of: LTS, Feature, Other")
+      exit
+   } elseif ($allParameters -contains "lts" -or $allParameters -contains "feature") {
+      $global:testBranch = iif ($allParameters -contains "lts") "LTS" "Feature"
+   } elseif ($allParameters -match "^other:.+") {
+      $global:testBranch = $allParameters -match "^other:"
+   }
+   $GLOBALS.setTestBranch($global:testBranch) > $null
+
+   if ($allParameters -contains "log") {
+      $GLOBALS.createLog = $true
+   } elseif ($allParameters -contains "nolog") {
+      $GLOBALS.createLog = $false
+   }
+   $allParameters = @($allParameters | Where-Object { @("log","nolog","lts","feature") -notcontains $_ -and $_ -notmatch "^other:" })
+
+   # These tests must be explicitly specified in the command line or the "allexplicit" command must be entered.
+   # They will not be included in a normal "all tests" run.
+   # Also include any interactive tests and anything with WIP in the description.
+   $explicitTestKeys = (($whichTests.GetEnumerator() | `
+          Where-Object {$_.Value.Description -match "WIP" -or $_.Value.interactive -eq "Y" -or $_.Value.explicitTest -eq "Y"} | `
+          select-object -Expand Name)) | `
+         Sort | Get-Unique
+
+   if ($allParameters -contains "help" -or $allParameters -contains "?" -or $allParameters -contains "testnames") {
+      # do the work and bail
+      $GLOBALS.showHelp(($allParameters -contains "testnames"))
+      return $false
+   }
+  
+   if ($allParameters -contains "showdata") {
+      # ditto
+      $GLOBALS.showData()
+      return $false
+   }
+
+   if ($allParameters -contains "updatehelp") {
+      $DATA.UpdateHelpHash = $true
+   }
+
+   if ($allParameters -contains "verifyhelp") {
+      $DATA.VerifyHelpHash = $true
+   }
+
+   if ($allParameters -match "^verbosity=") {
+      if (($allParameters -match "^verbosity=[0-9]")[0] -match '=([0-9]*)') {
+         $verbosity = [int]$matches[1]
+         $GLOBALS.Verbosity = iif $($verbosity -gt 3) 3 $verbosity
+      }
+      $allParameters = @($allParameters | Where-Object { $_ -notmatch '^verbosity=' })
+   }
+
+   if ($allParameters -match "^batch=") {
+      if (($allParameters -match "^batch=[0-9]")[0] -match '=([0-9]*)') {
+         $batch = [int]$matches[1]
+         $GLOBALS.asyncBatchNumber = iif $($batch -gt 9) 9 $batch
+         if ($GLOBALS.asyncBatchNumber -eq 0) {
+            $GLOBALS.asyncBatchSuffix = ""
+         } else {
+            $GLOBALS.asyncBatchSuffix = "_B_$($GLOBALS.asyncBatchNumber)"
+            $DATA.logName = "$($BASE_NAME)_transcript_batch#$($GLOBALS.asyncBatchNumber)_$("{0:yyyy}{0:MM}{0:dd}_{0:HH}{0:mm}{0:ss}" -f (Get-Date)).log";
+         }
+      }
+      $allParameters = @($allParameters | Where-Object { $_ -notmatch '^batch=' })
+   }
+   $allParameters = @($allParameters | Where-Object { @("verifyhelp","updatehelp","log","nolog","logcommands") -notcontains $_ -and $_ -notmatch "^([0-9]+)$" })
+
+   # clean up logs directory
+   $p = iif $($GLOBALS.asyncBatchSuffix) "_batch#$($GLOBALS.asyncBatchNumber)" ""
+   foreach ($logPattern in ("$($DATA.filePaths.logs)*commands${p}*.log","$($DATA.filePaths.logs)*transcript${p}*.log")) {
+      while ((Get-ChildItem $logPattern).Count -ge $DATA.maxLogs) {
+         $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = $null; message = "Removing Log"; extra = "$(Get-ChildItem $logPattern | Sort CreationTime | Select -First 1)"; })
+         Get-ChildItem $logPattern | Sort CreationTime | Select -Last 1 | Remove-Item
+      }
+   }
+
+
+   if ($DATA.VerifyHelpHash -or $DATA.UpdateHelpHash) {
+      $allParameters += "checkhelp"
+   }
+
+   # Process the command line and either show help or set the list of tests to run
+   if ($allParameters -contains "allexplicit") {
+      foreach ($t in $whichTests.GetEnumerator()) {
+         $t.Value.runTest = iif $($explicitTestKeys -contains $t.Key) "Y" "N"
+      }
+   } elseif ($allParameters.Count -eq 0 -or $allParameters -contains "all") {
+      foreach ($t in $whichTests.GetEnumerator()) {
+         $t.Value.runTest = iif $($explicitTestKeys -contains $t.Key) "N" "Y"
+      }
+   } else {
+      # Try to find commands based on a partial match of what they entered vs. the
+      # beginning of the test name, but make sure it only matches one command e.g.,
+      # "misc" will find only "Miscellaneous" but "asset" finds both
+      # "AssetsAndAccounts" and "AssetPartition".
+      $quit = $false
+      foreach ($p in $allParameters.GetEnumerator() | Where-Object {$_ -ne ""}) {
+         $matches = ($whichTests.Keys -match "^$p")
+         if ($whichTests.Keys -contains $p) {
+            if ($whichTests[$p].fileName -ne "") {
+               $whichTests[$p].runTest = "Y"
+            } else {
+               $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "The $p command test has no file associated with it yet.")
+            }
+         } elseif ($matches.Count -ge 1) {
+            if ($matches.Count -gt 1) {
+               $GLOBALS.writeHostColor($GLOBALS.COLORS.info, "Multiple matches for $p found. Adding $($matches -join ",")")
+            }
+            $matches | ForEach {
+               if ($whichTests[$_].fileName -ne "") {
+                  $whichTests[$_].runTest = "Y"
+               } else {
+                  $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "The $_ command test has no file associated with it yet.")
+               }
+            }
+         } else {
+            $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "$p is not a recognized test name")
+            $commandsOnly = $true
+            $quit = $true
+         }
+      }
+      if ($quit) { 
+         if ($commandsOnly) { Read-Host "Press Enter to see a list of command names" > $null }
+         $GLOBALS.showHelp($commandsOnly)
+         return $false
+      }
+   }
+
+   $commandsToRun = ($whichTests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"} | Sort {$_.Value.Seq})
+   if ($commandsToRun.Count -eq 0) {
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "No commands were chosen to run")
+      return $false
+   }
+
+   # If Manual is the only thing being run there's no need to go through anything else
+   if ($commandsToRun.Count -eq 1 -and $DATA.Tests.Manual.runTest -eq "Y") {
+      . "$($DATA.Tests.Manual.fileName)"
+      return $false
+   }
+
+   # Show the user the tests that are about to be run and give them
+   # one last chance to bail
+   write-host -NoNewLine "Current Settings"
+   $fmt = '{0,-15} = {1}'
+   $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "`
+      $("$fmt" -f "Appliance", $($DATA.Appliance))`
+      $("$fmt" -f "SPS Appliance", $($DATA.clusterSession[0]))`
+      $("$fmt" -f "Admin User", $($DATA.userName))`
+      $("$fmt" -f "Feature Version", $($DATA.FeatureVersion))`
+      $("$fmt" -f "LTS Version", $($DATA.LTSVersion))`
+      $("$fmt" -f "Verbosity", $($GLOBALS.Verbosity))`
+      $("$fmt" -f "VerifyHelpHash", $($DATA.VerifyHelpHash))`
+      $("$fmt" -f "UpdateHelpHash", $($DATA.UpdateHelpHash))`
+      $("$fmt" -f "Log", $(iif $GLOBALS.createLog "$($DATA.filePaths.logs)$($DATA.logName)" "Disabled"))`
+   ")
+   write-host "Running the following tests (test counts are approximate)"
+   $totalTestCount = 0
+   foreach ($t in $commandsToRun) {
+      $line = "   $($t.Key)" `
+         + (iif $($t.Value.testCount) " ($($t.Value.testCount) tests) " " ") `
+         + (iif $($t.Value.interactive -eq "Y") " - May require human interaction" "") `
+         + (iif ($t.Value.description -match "WIP") " - WIP. May not do much yet." "")
+      write-host $line
+      $totalTestCount += $t.Value.testCount
+   }
+   if ($totalTestCount -gt 0) {
+      Write-Host "Total test count (est) = $totalTestCount"
+   }
+   write-host
+
+   return $true
+};
 
