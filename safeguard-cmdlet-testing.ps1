@@ -1,320 +1,68 @@
 ﻿# Gather any parameters into a single array
 param([Parameter(Mandatory=$false, ValueFromRemainingArguments=$true)][string[]] $allParameters)
 
+Write-Host "###############################################################################"
+Write-Host "#                      Safeguard-ps Cmdlet Test Harness                       #"
+Write-Host "###############################################################################"
+Write-Host
 $SCRIPT_PATH = (Split-Path $myInvocation.MyCommand.Path)
 $BASE_NAME = [System.IO.Path]::GetFileNameWithoutExtension($myInvocation.MyCommand.Name)
-$collectedErrors = [System.Collections.ArrayList]@()
-$knownVMTypes = @('vmware','hyperv')
 
-# just moving the "global" data to a separate file for maintainability
-# (yes, it's powershell, everything is global)
-. "$SCRIPT_PATH\harness-data.ps1"
+# global data and functions are in separate files for maintainability
+# harness-globals loads all other harness-* files
+. "$SCRIPT_PATH\harness-globals.ps1"
 
-# load up the harness functions
-. "$SCRIPT_PATH\harness-functions.ps1"
-
-# some pre-processing of the command line to find stuff not directly test-related
-if ($allParameters -contains "all" -and $allParameters -contains "allexplicit") {
-   Write-Host -ForegroundColor $COLORS.highlight.fore -BackgroundColor $COLORS.highlight.back "ALLEXPLICIT takes precedence over ALL. Only ALLEXPLICIT will be run."
-}
-
-$testBranch = "LTS"
-if (($allParameters -match "^(lts|(other:)|feature)").length -gt 1) {
-   Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "Can not specify more than one of: LTS, Feature, Other"
+if ( -not $GLOBALS.initializeEnvironment($DATA.Tests)) {
    exit
-} elseif ($allParameters -contains "lts" -or $allParameters -contains "feature") {
-   $testBranch = iif ($allParameters -contains "lts") "LTS" "Feature"
-} elseif ($allParameters -match "^other:.+") {
-   $testBranch = $allParameters -match "^other:"
-}
-setTestBranch $testBranch > $null
-
-if ($allParameters -contains "log") {
-   $DATA.createLog = $true
-} elseif ($allParameters -contains "nolog") {
-   $DATA.createLog = $false
-}
-$allParameters = @($allParameters | Where-Object { @("log","nolog","lts","feature") -notcontains $_ -and $_ -notmatch "^other:" })
-
-# List of tests that can be run (ok... hashmap)
-#    Seq = order in which test will be run if > 1 test is specified
-#    runTest = Y/N, will be filled in based on commandline parameters
-#    interactive = Y/N, test has prompting and/or may require human interaction
-#    explicitTest = Y/N, test must be explicitly included in command line (default=N)
-#    fileName = script of tests that will be dot-sourced when needed
-#    description = yadda yadda describing the test. Include the text WIP in the description for files that aren't done yet.
-$Tests = @{
-   CheckHelp = @{
-      Seq=1; runTest = "N"; interactive="N"; explicitTest="Y";
-      fileName = "cmdlet-tests-help.ps1";
-      description="Check to make sure all commands return help.";
-   };
-   NoParameter = @{
-      Seq=2;  runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-noparameter.ps1";
-      description="Runs commands that don't require parameters.";
-   };
-   Users = @{
-      Seq=3;  runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-users.ps1";
-      description="User related commands.";
-   };
-   Groups = @{
-      Seq=4;  runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-groups.ps1";
-      description="User group related commands.";
-   };
-   AssetsAndAccounts = @{
-      Seq=5;  runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-assets-and-accounts.ps1";
-      description="Assets, Accounts, and Asset/Account Groups.";
-   };
-   AccountPasswordRules = @{
-      Seq=6;  runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-account-password-rules.ps1";
-      description="Create, edit, and list account password rules.";
-   };
-   CheckChangeSchedules = @{
-      Seq=7;  runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-check-change-schedules.ps1";
-      description="Create, edit, and list check and change schedules.";
-   };
-   Directory = @{
-      Seq=8;  runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-directory.ps1";
-      description="Create, edit, and manipulate directory and directory accounts.";
-   };
-   AssetPartition = @{
-      Seq=9;  runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-asset-partition.ps1";
-      description="Create, edit, and manipulate partitions.";
-   };
-   PasswordProfile = @{
-      Seq=10; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-password-profile.ps1";
-      description="Create, edit, and list password profiles.";
-   };
-   NetworkDiagnostics = @{
-      Seq=11; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-network-diagnostics.ps1";
-      description="Run network diagnostic commands.";
-   };
-   NewSchedules = @{
-      Seq=12; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-new-schedules.ps1";
-      description="Schedule creation commands (not assigning schedules).";
-   };
-   EventSubscriptions = @{
-      Seq=13; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-event-subscriptions.ps1";
-      description="Test event subscription commands.";
-   };
-   Backups = @{
-      Seq=14; runTest = "N"; interactive="Y";
-      fileName = "cmdlet-tests-backups.ps1";
-      description="Backup related commands (not restore).";
-   };
-   Entitlement = @{
-      Seq=15; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-entitlement.ps1";
-      description="Entitlement & Access Policy creation.";
-   };
-   A2A = @{
-      Seq=16; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-a2a.ps1";
-      description="A2A configuration and use.";
-   };
-   Requests = @{
-      Seq=17; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-requests.ps1";
-      description="WIP. Request workflow.";
-   };
-   Cluster= @{
-      Seq=18; runTest = "N"; interactive="Y";
-      fileName = "cmdlet-tests-cluster.ps1";
-      description="Cluster operations.";
-   };
-   Session= @{
-      Seq=19; runTest = "N"; interactive="Y";
-      fileName = "cmdlet-tests-sps.ps1";
-      description="Work with SPS Appliances.";
-   };
-   Certificates = @{
-      Seq=20; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-certificates.ps1";
-      description="Csr, Certificates, and certification access.";
-   };
-   Identity = @{
-      Seq=21; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-identity.ps1";
-      description="Create, edit, and manipulate identity provider.";
-   };
-   Diagnostic= @{
-      Seq=22; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-diagnostic.ps1";
-      description="Appliance diagnostic packages.";
-   };
-   Starling = @{
-      Seq=23; runTest = "N"; interactive="Y";
-      fileName = "cmdlet-tests-starling.ps1";
-      description="Starling join 'n stuff.";
-   };
-   Patch = @{
-      Seq=24; runTest = "N"; interactive="Y";
-      fileName = "cmdlet-tests-patch.ps1";
-      description="Tests patching commands.";
-   };
-   Settings = @{
-      Seq=25; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-settings.ps1";
-      description="Tests Settings commands (no LTS tests).";
-   };
-   Time = @{
-      Seq=26; runTest = "N"; interactive="Y";
-      fileName = "cmdlet-tests-time.ps1";
-      description="Tests time commands.";
-   };
-   # Somebody has to be last, why not these?
-   FilterProperties = @{
-      Seq=96; runTest = "N"; interactive="N"; explicitTest="Y";
-      fileName = "cmdlet-tests-filter-properties.ps1";
-      description="Tests to make sure that all filterable properties of a DTO can actually be used as a filter.";
-   };
-   Manual = @{
-      Seq=97; runTest = "N"; interactive="Y";
-      fileName = "cmdlet-tests-manual.ps1";
-      description="Shows list of commands that have to be tested by hand. Does not actually do any tests.";
-   };
-   Miscellaneous = @{
-      Seq=98; runTest = "N"; interactive="N";
-      fileName = "cmdlet-tests-miscellaneous.ps1";
-      description="All kinds of don't-fit-elsewhere type commands.";
-   };
-   ObsoleteCommands = @{
-      Seq=99; runTest = "N"; interactive="Y"; explicitTest="Y";
-      fileName = "cmdlet-tests-obsolete-commands.ps1";
-      description="Test to make sure Obsolete commands return that they are, in fact, obsolete.";
-   };
-}
-# These tests must be explicitly specified in the command line or the "allexplicit" command must be entered.
-# They will not be included in a normal "all tests" run.
-# Also include any interactive tests and anything with WIP in the description.
-$explicitTestKeys = (($Tests.GetEnumerator() | `
-       Where-Object {$_.Value.Description -match "WIP" -or $_.Value.interactive -eq "Y" -or $_.Value.explicitTest -eq "Y"} | `
-       select-object -Expand Name)) | `
-      Sort | Get-Unique
-
-# count of how many good/bad/info calls for summary at the end
-$resultCounts = @{
-   Good = 0;
-   Bad = 0;
-   Info = 0;
-}
-
-# ========================================================================
-#
-#  Actual Start of Script logic
-#
-# ========================================================================
-
-# Process the command line and either show help or set the list of tests to run
-if ($allParameters -contains "help" -or $allParameters -contains "?") {
-   # command will exit after doing its thing
-   showHelp
-} elseif ($allParameters -contains "showdata") {
-   # ditto
-   showData
-} elseif ($allParameters.Length -eq 0 -or $allParameters -contains "allexplicit") {
-   foreach ($t in $Tests.GetEnumerator()) {
-      $t.Value.runTest = iif ($explicitTestKeys -contains $t.Key) "Y" "N"
-   }
-} elseif ($allParameters.Length -eq 0 -or $allParameters -contains "all") {
-   foreach ($t in $Tests.GetEnumerator()) {
-      $t.Value.runTest = iif ($explicitTestKeys -contains $t.Key) "N" "Y"
-   }
-} else {
-   # Try to find commands based on a partial match of what they entered vs. the
-   # beginning of the test name, but make sure it only matches one command e.g.,
-   # "misc" will find only "Miscellaneous" but "asset" finds both
-   # "AssetsAndAccounts" and "AssetPartition".
-   foreach ($p in $allParameters) {
-      $matches = ($Tests.Keys -match "^$p")
-      if ($Tests.Keys -contains $p) {
-         $Tests[$p].runTest = "Y"
-      } elseif ($matches.Count -eq 1) {
-         $Tests[$matches[0]].runTest = "Y"
-      } elseif ($matches.Count -gt 1) {
-         Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "$p is not a distinct test name. Could be any of: $($matches -join ' ')"
-         $quit = $true
-      } else {
-         Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "$p is not a recognized test name"
-         $quit = $true
-      }
-   }
-   if ($quit) { 
-      showHelp
-   }
-}
-
-# If Manual is the only thing being run there's no need to go through anything else
-if ($Tests.Manual.runTest -eq "Y" -and ($Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"}).Count -eq 1) {
-   . "$SCRIPT_PATH\$($Tests.Manual.fileName)"
-   exit
-}
-
-# Show the user the tests that are about to be run and give them
-# one last chance to bail
-write-host -NoNewLine "Running the following tests against "
-write-host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "Appliance=$($DATA.appliance), Others=[$($DATA.clusterReplicas -join ",")], User=$($DATA.userName), TestBranch=$testBranch"
-foreach ($t in ($Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"} | Sort {$_.Value.Seq})) {
-   write-host "   $($t.Key) $(iif ($t.Value.interactive -eq "Y") ' - May require human interaction' '')$(iif ($t.Value.description -match "WIP") ' - WIP. May not do much yet.' '')"
 }
 pause
 
+$knownVMTypes = @('vmware','hyperv')
+
 try {
-   if ($DATA.createLog) {
-      startTranscribing
+   if ($GLOBALS.createLog) {
+      $GLOBALS.startTranscribing()
    }
 
-   $fullRunInfo = testBlockHeader "All Test Blocks"
+   $fullRunInfo = $GLOBALS.testBlockHeader("All Test Blocks")
 
-   sgConnect
-   goodResult "Connect-Safeguard" "Success"
+   $GLOBALS.sgConnect()
+   $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Connect-Safeguard"; message = "Success"; })
 
-   writeCallHeader "Get-SafeguardVersion"
+   $GLOBALS.writeCallHeader("Get-SafeguardVersion")
    $sgVersion = Get-SafeguardVersion
-   goodResult "Get-SafeguardVersion" "Success"
-   $sgVersion | format-table
+   $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardVersion"; message = "Success"; })
+   $GLOBALS.formatTable(@{ output = $sgVersion; })
 
    $isVm = $knownVMTypes -contains $sgVersion.BuildPlatform
    $isLTS = $sgVersion.Minor -eq "0"
 
-   writeCallHeader "Appliance Info"
-   infoResult "isVm" $isVm
-   infoResult "isLTS" $isLTS
-   if ( $testBranch -match "^other:") {
-      if ($Tests.Patch.runTest -eq "Y" -or $Tests.Cluster.runTest -eq "Y") {
-         $Tests.Patch.runTest = "N"
-         $Tests.Cluster.runTest = "N"
-         infoResult "Test Branch Check" "Skipping patch and cluster testing on 'Other' test branch"
+   $GLOBALS.writeCallHeader("Appliance Info")
+   $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "isVm"; message = $isVm; })
+   $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "isLTS"; message = $isLTS; })
+   if ($GLOBALS.testBranch -match "^other:") {
+      if ($DATA.Tests.Patch.runTest -eq "Y" -or $DATA.Tests.Cluster.runTest -eq "Y") {
+         $DATA.Tests.Patch.runTest = "N"
+         $DATA.Tests.Cluster.runTest = "N"
+         $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Test Branch Check"; message = "Skipping patch and cluster testing on 'Other' test branch"; })
       }
-   } elseif ($isLTS -and $testBranch -eq "Feature" -and $Tests.Patch.runTest -eq "Y") {
-      infoResult "Test Branch Check" "This is an LTS appliance. Do you want to patch it to a Feature build?"
+   } elseif ($isLTS -and $GLOBALS.testBranch -eq "Feature" -and $DATA.Tests.Patch.runTest -eq "Y") {
+      $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Test Branch Check"; message = "This is an LTS appliance. Do you want to patch it to a Feature build?"; })
       if ("Y" -ne (Read-Host "Enter Y to continue with patch tests on $($DATA.appliance)")) {
-         $Tests.Patch.runTest = "N"
-         infoResult "Patch Testing" "Skipping patch testing from LTS to Feature"
+         $DATA.Tests.Patch.runTest = "N"
+         $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Patch Testing"; message = "Skipping patch testing from LTS to Feature"; })
       }
-   } elseif (($isLTS -and $testBranch -ne "LTS") -or (-not $isLTS -and $testBranch -ne "Feature")) {
-      badResult "Test Branch Mismatch" "This is a $(iif $isLTS "LTS" "Feature") appliance and TestBranch is set to $testBranch"
+   } elseif (($isLTS -and $GLOBALS.testBranch -ne "LTS") -or (-not $isLTS -and $GLOBALS.testBranch -ne "Feature")) {
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Test Branch Mismatch"; message = "This is a $(iif $isLTS "LTS" "Feature") appliance and TestBranch is set to $GLOBALS.testBranch"; })
       exit
    }
 
-   writeCallHeader "Test-SafeguardVersion - minimum 6.0"
+   $GLOBALS.writeCallHeader("Test-SafeguardVersion - minimum 6.0")
    Test-SafeguardVersion -MinVersion 6.0
-   goodResult "Test-SafeguardVersion" "Success"
- 
-   foreach ($t in ($Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"} | Sort {$_.Value.Seq})) {
-      . "$SCRIPT_PATH\$($t.Value.fileName)"
+   $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Test-SafeguardVersion"; message = "Success"; })
+
+   foreach ($t in ($DATA.Tests.GetEnumerator() | Where-Object {$_.Value.runTest -eq "Y"} | Sort {$_.Value.Seq})) {
+      . "$($t.Value.fileName)"
    }
 }
 catch {
@@ -324,12 +72,12 @@ catch {
 finally {
    Disconnect-Safeguard
 
-   testBlockHeader "All Test Blocks - Final Tally" $fullRunInfo 
-   if ($resultCounts.Bad -gt 0) {
-      Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back "===== Collected Errors ====="
-      $collectedErrors | Write-Host -ForegroundColor $COLORS.bad.fore -BackgroundColor $COLORS.bad.back
+   $GLOBALS.testBlockHeader($fullRunInfo, $true)
+   if ($GLOBALS.resultCounts.Bad -gt 0) {
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "===== Collected Errors =====")
+      $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, $GLOBALS.collectedErrors)
    }
    Write-Host ""
 
-   if ($DATA.createLog) { Stop-Transcript }
+   if ($GLOBALS.createLog) { Stop-Transcript }
 }

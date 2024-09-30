@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LicenseFile>
+    <Licenses>
+        <License Generator="File" GeneratorVersion="3.0" Signature="2FFD56F48B05FCA52C955599DE27F602637E363E0EB22A82ABC2517F3C2C4A645D57D3597D75FB3D390C57BC6B1A941779A6B34F0A6E476C9B0165758F21FC0D">
+            <Enterprise>true</Enterprise>
+            <ExpiryDate>2030-08-01</ExpiryDate>
+            <LicenseNumber>132-232-530</LicenseNumber>
+            <LicenseType>Term</LicenseType>
+            <ProductName>Connect for Safeguard Assets</ProductName>
+            <ProductVersion>8</ProductVersion>
+        </License>
+    </Licenses>
+</LicenseFile>
