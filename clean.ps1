@@ -2,7 +2,7 @@
 . ".\harness-data.ps1"
 if ("Y" -eq (Read-Host "Enter Y to clear out all output files")) {
    foreach ($d in ($DATA.filePaths.GetEnumerator())) {
-      if (@("licenses","tests","diagnostics") -contains (Split-Path -Path $d.Key -Leaf)) {
+      if (@("licenses","tests","diagnostics") -contains $d.Key) {
          continue
       }
       if ((Test-Path $d.Value -PathType Container) -and "Y" -eq (Read-Host "Enter Y to nuke everything in $($d.Value)")) {
