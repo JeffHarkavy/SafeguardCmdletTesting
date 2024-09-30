@@ -10,7 +10,7 @@ if ($null -eq $DATA) {
 #    Seq                = order in which test will be run if > 1 test is specified
 #    runTest            = Y/N, will be filled in based on commandline parameters
 #    interactive        = Y/N, test has prompting and/or may require human interaction
-#    fileName           = script of tests that will be dot-sourced when needed. file must be in folder in $DATA.filePaths.cliScripts
+#    fileName           = script of tests that will be dot-sourced when needed.
 #    description        = yadda yadda describing the test. Include the text WIP in the description for files that aren't done yet.
 #    TestBlockName      = Used for writing block headers and in some error or diagnostic output
 #    TestBlockShortName = Used in good/bad/info/warn output

@@ -9,7 +9,7 @@ $GLOBALS.currentTest = $DATA.Tests.Backups
 $script:blockInfo = $GLOBALS.testBlockHeader()
 $script:completedSuccessfully = $false
 $script:exceptionCaught = $false
-$script:localBackupFilename = "cmdlet-test-sgbackup_$testBranch_$("{0:yyyy}{0:MM}{0:dd}_{0:HH}{0:mm}{0:ss}" -f (Get-Date)).sgb"
+$script:localBackupFilename = "cmdlet-test-sgbackup_$($GLOBALS.testBranch)_$(getTimestamp 1).sgb"
 $script:localBackupFilePath = "$($DATA.filePaths.backups)\$script:localBackupFilename"
 
 function script:Cleanup() {
@@ -45,28 +45,19 @@ try {
 
    try {
       $createdArchiveServer = 0
-      $archiveServer = Invoke-SafeguardMethod core GET ArchiveServers -Parameters @{filter="Name ieq '$($DATA.realArchiveServer.archSrvName)'"}
+      $archiveServer = Invoke-SafeguardMethod core GET ArchiveServers -Parameters @{filter="Name ieq '$($DATA.realArchiveServer.DisplayName)'"}
 
       if ($archiveServer.Count -eq 0) {
-         $archiveServer = New-SafeguardArchiveServer -DisplayName $DATA.realArchiveServer.archSrvName `
-           -NetworkAddress $DATA.realArchiveServer.NetworkAddress `
-           -TransferProtocol $DATA.realArchiveServer.TransferProtocol `
-           -Port $DATA.realArchiveServer.Port `
-           -StoragePath $DATA.realArchiveServer.StoragePath `
-           -ServiceAccountCredentialType $DATA.realArchiveServer.ServiceAccountCredentialType `
-           -ServiceAccountName $DATA.realArchiveServer.ServiceAccountName `
-           -ServiceAccountPassword $DATA.realArchiveServer.ServiceAccountPassword `
-           -AcceptSshHostKey
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardArchiveServer"; message = "Successfully created Archive Server $($DATA.realArchiveServer.archSrvName) Id=$($archiveServer.Id)" ; })
+         $archiveServer = $GLOBALS.createArchiveServer()
          $createdArchiveServer = 1
       }
 
       Save-SafeguardBackupToArchive -BackupId $newBackup.Id -ArchiveServerId $archiveServer.Id
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Save-SafeguardBackupToArchive"; message = "Successfully archived backup to Archive Server $($DATA.realArchiveServer.archSrvName)" ; })
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Save-SafeguardBackupToArchive"; message = "Successfully archived backup to Archive Server $($DATA.realArchiveServer.DisplayName)" ; })
    } catch {
       if ($_ -match "That entity name is already in use") {
          # eh.  we tried.
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Save-SafeguardBackupToArchive"; message = "Successful-ish. Backup $($newBackup.FileName) already exists on $($DATA.realArchiveServer.archSrvName)" ; })
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Save-SafeguardBackupToArchive"; message = "Successful-ish. Backup $($newBackup.FileName) already exists on $($DATA.realArchiveServer.DisplayName)" ; })
       } else {
          $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Save-SafeguardBackupToArchive"; message = "Unexpected error"; ex = $_; })
       }

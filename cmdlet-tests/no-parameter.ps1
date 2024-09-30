@@ -48,23 +48,20 @@ try {
    $GLOBALS.writeCallHeader("Creating Asset and Accounts for reports")
    $defaultPassword = "AbCD123!@#"
    $securePassword = $defaultPassword | ConvertTo-SecureString -AsPlainText -Force
-   $asset = Find-SafeguardAsset $DATA.assetName
-   if ($asset) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "found $($DATA.assetName)"; }) }
+   $asset = Find-SafeguardAsset $DATA.asset.DisplayName
+   if ($asset) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "found $($DATA.asset.DisplayName)"; }) }
    else {
-      $asset = New-SafeguardAsset -DisplayName "$($DATA.assetName)" -Platform $DATA.assetPlatform -NetworkAddress $DATA.assetIpAddress `
-         -ServiceAccountCredentialType Password -ServiceAccountName $DATA.assetServiceAccount -ServiceAccountPassword $DATA.assetServiceAccountPassword `
-         -AcceptSshHostKey
-     $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAsset"; message = "successfully asset $($DATA.assetName)"; })
+     $asset = $GLOBALS.createAsset()
      $script:createdItems.Assets += $asset
    }
    $script:assets += $asset
 
    foreach ($acctName in $DATA.assetAccounts.GetEnumerator()) {
-      $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.assetName)' and Name eq '$acctname'"
-      if ($found) { $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAssetAccount"; message = "$acctName already exists on $($DATA.assetName)"; }) }
+      $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.asset.DisplayName)' and Name eq '$acctname'"
+      if ($found) { $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAssetAccount"; message = "$acctName already exists on $($DATA.asset.DisplayName)"; }) }
       else {
-         $found = New-SafeguardAssetAccount -ParentAsset $DATA.assetName -NewAccountName $acctname
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccount"; message = "$acctName successfully created on $($DATA.assetName)"; })
+         $found = New-SafeguardAssetAccount -ParentAsset $DATA.asset.DisplayName -NewAccountName $acctname
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccount"; message = "$acctName successfully created on $($DATA.asset.DisplayName)"; })
          $script:createdItems.AssetAccounts += $found
       }
       Set-SafeguardAssetAccountPassword -AccountToSet $found -NewPassword $securePassword > $null

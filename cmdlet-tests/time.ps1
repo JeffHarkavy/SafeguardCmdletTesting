@@ -14,11 +14,11 @@ try {
     $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Restore-SafeguardBackup"; message = "Do you want to set your SPP box back 30 days.?"; })
     if ("Y" -eq (Read-Host "Enter Y to continue with setting time -30 day on $($DATA.appliance). Note: no Y means set it to current time.")) {
         $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Set-SafeguardTime"; message = "Warning: This will set your SPP box back 30 days and your user may be unable to stay authenticate while SPP changes the time to catch back up. The users token will expire as SPP jumps to catch up."; })
-        Set-SafeguardTime -SystemTime (get-date).AddDays(-30).ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+        Set-SafeguardTime -SystemTime (getTimestamp 3 (get-date).AddDays(-30))
         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Set-SafeguardTime"; message = "Successful reset Set-SafeguardTime" ; })
     }
     else{
-        Set-SafeguardTime -SystemTime (get-date).ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+        Set-SafeguardTime -SystemTime (getTimestamp 3)
         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Set-SafeguardTime"; message = "Successful reset Set-SafeguardTime"; })
     }
 

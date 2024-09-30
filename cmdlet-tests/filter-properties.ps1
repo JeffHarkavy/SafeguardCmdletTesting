@@ -53,7 +53,7 @@ function script:ensureDataExists() {
                  $entitlement = $null
                  try { $entitlement = Get-SafeguardEntitlement -EntitlementToGet $DATA.entitlementName } catch {}
                  if ($null -eq $entitlement) {
-                    $entitlement = New-SafeguardEntitlement -Name "$($DATA.entitlementName)" -MemberUsers "$($DATA.userName)"
+                    $entitlement = New-SafeguardEntitlement -Name "$($DATA.entitlementName)" -MemberUsers "$($DATA.superUser.userName)"
                     $script:createdItems.Roles = $entitlement
                     $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "New-SafeguardEntitlement"; message = "Added entitlement $($entitlement.Name)"; })
                  }
@@ -64,31 +64,19 @@ function script:ensureDataExists() {
                  $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Access Policy"; message = "Added AccessPolicy $($script:createdItems.AccessPolicies.Name)"; })
               }
               'AccountGroups'     { $script:createdItems[$key] = New-SafeguardAccountGroup -Name "$($DATA.accountGroupName)" -Description "Description for $($DATA.accountGroupName)" }
-              'ArchiveServers'    { $script:createdItems[$key] = New-SafeguardArchiveServer -DisplayName $DATA.realArchiveServer.archSrvName `
-                 -NetworkAddress $DATA.realArchiveServer.NetworkAddress `
-                 -TransferProtocol $DATA.realArchiveServer.TransferProtocol `
-                 -Port $DATA.realArchiveServer.Port `
-                 -StoragePath $DATA.realArchiveServer.StoragePath `
-                 -ServiceAccountCredentialType $DATA.realArchiveServer.ServiceAccountCredentialType `
-                 -ServiceAccountName $DATA.realArchiveServer.ServiceAccountName `
-                 -ServiceAccountPassword $DATA.realArchiveServer.ServiceAccountPassword `
-                 -AcceptSshHostKey
+              'ArchiveServers'    { $script:createdItems[$key] = $GLOBALS.createArchiveServer($true)
               }
               'AssetAccounts'     {
-                 if (!(Find-SafeguardAsset $DATA.assetName)) {
-                    $script:createdItems.Assets = New-SafeguardAsset -DisplayName "$($DATA.assetName)" -Platform $DATA.assetPlatform -NetworkAddress $DATA.assetIpAddress `
-                     -ServiceAccountCredentialType Password -ServiceAccountName $DATA.assetServiceAccount -ServiceAccountPassword $DATA.assetServiceAccountPassword `
-                     -AcceptSshHostKey -PrivilegeElevationCommand "sudo"
+                 if (!(Find-SafeguardAsset $DATA.asset.DisplayName)) {
+                    $script:createdItems.Assets = $GLOBALS.createAsset($true)
                  }
-                 $script:createdItems[$key] = New-SafeguardAssetAccount -ParentAsset $DATA.assetName -NewAccountName $DATA.assetAccounts[0]
+                 $script:createdItems[$key] = New-SafeguardAssetAccount -ParentAsset $DATA.asset.DisplayName -NewAccountName $DATA.assetAccounts[0]
               }
               'AssetGroups'       { $script:createdItems[$key] = New-SafeguardAssetGroup -Name "$($DATA.assetGroupName)" -Description "Description for $($DATA.assetGroupName)" }
-              'Assets'            { $script:createdItems[$key] = New-SafeguardAsset -DisplayName "$($DATA.assetName)" -Platform $DATA.assetPlatform -NetworkAddress $DATA.assetIpAddress `
-                  -ServiceAccountCredentialType Password -ServiceAccountName $DATA.assetServiceAccount -ServiceAccountPassword $DATA.assetServiceAccountPassword `
-                  -AcceptSshHostKey -PrivilegeElevationCommand "sudo"
+              'Assets'            { $script:createdItems[$key] = $GLOBALS.createAsset($true)
               }
               'ReasonCodes'       { $script:createdItems[$key] = Invoke-SafeguardMethod Core POST ReasonCodes -Body @{ Name = "RN12345"; Description = "Routine maintenance." } }
-              'Roles'             { $script:createdItems[$key] = New-SafeguardEntitlement -Name "$($DATA.entitlementName)" -MemberUsers "$($DATA.userName)" }
+              'Roles'             { $script:createdItems[$key] = New-SafeguardEntitlement -Name "$($DATA.entitlementName)" -MemberUsers "$($DATA.superUser.userName)" }
               'SyslogServers'     { $script:createdItems[$key] = New-SafeguardSyslogServer -NetworkAddress "1.2.3.4" -Name "SYSLOG12345" }
               'TicketSystems'     { $script:createdItems[$key] = Invoke-SafeguardMethod Core POST TicketSystem -Body @{ Name='TS12345'; TicketSystemType='Other'; TicketRegularExpression='1.*2'; } }
               'UserGroups'        { $script:createdItems[$key] = New-SafeguardUserGroup -Name "$($DATA.userGroupName)" }

@@ -22,10 +22,10 @@ function script:Cleanup() {
 }
 
 try {
-   if ($testBranch -match "^other:") {
+   if ($GLOBALS.testBranch -match "^other:") {
       throw "Patch testing not done for 'Other' test branch. Skipping all Patch tests."
    }
-   $patchPath = (iif ($testBranch -eq "LTS") $DATA.patchPathLTS $DATA.patchPathFeature) + (iif $isVM "vm\" "")
+   $patchPath = (iif ($GLOBALS.testBranch -eq "LTS") $DATA.patchPathLTS $DATA.patchPathFeature) + (iif $isVM "vm\" "")
    if (Test-Path $patchPath -PathType Container) {
       $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Test-Path"; message = "$patchPath is available"; })
    } else {

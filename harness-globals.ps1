@@ -2,11 +2,31 @@
 # also, so it can be dot-sourced in from the command line for development and testing
 if ($GLOBALS) { Remove-Variable -Scope Global GLOBALS }
 
-# Simpler to add this as a true "global" function by itself rather than adding to the $GLOBALS object.
-# Powershell 7 introduced the ternary operator (bool ? truestuff : falsestuff), but since
-# safeguard-ps can work with PS 5.1 (for now) we'll keep this handy.
+# Simpler to add these as true global function rather than adding to the $GLOBALS object.
+# Powershell 7 introduced the ternary operator (bool ? truestuff : falsestuff) and null
+# coalesce ($x ?? "ifnullvalue"), but since safeguard-ps can work with PS 5.1 (for now)
+# we'll keep these handy.
 Function iif($If, $Right, $Wrong) { If ($If) {$Right} Else {$Wrong} }
 Function ifIsNull($value, $isnullvalue) { If ($null -eq $value) {$isnullvalue} Else {$value} }
+Function ifIsNullOrEmpty($value, $alternative) { If ($null -eq $value -or "" -eq $value) { $alternative } Else { $value } }
+
+# for common timestamping
+# formatType 1 == for file names
+#            2 == log output
+#            3 == for time tests
+Function getTimestamp($formatType = 1, $currentTime = $null) {
+   $currentTime = ifIsNull $currentTime (Get-Date) $currentTime
+   if ($formatType -eq 1) {
+      return "{0:yyyy}{0:MM}{0:dd}_{0:HH}{0:mm}{0:ss}" -f ($currentTime)
+   } elseif ($formatType -eq 2) {
+      return "{0:MM}-{0:dd}-{0:yyyy} {0:HH}:{0:mm}:{0:ss}.{0:fff}" -f ($currentTime)
+   } elseif ($formatType -eq 3) {
+      return $currentTime.toString("yyyy-MM-ddTHH:mm:ss.fffZ")
+   }
+
+   # Just to have some form of fallback for formatType
+   return "{0:yyyy}{0:MM}{0:dd}_{0:HH}{0:mm}{0:ss}" -f ($currentTime)
+}
 
 $SCRIPT_PATH = ifIsNull $SCRIPT_PATH (Get-Location).Path
 
@@ -37,8 +57,11 @@ $GLOBALS = @{
    bgcolor = (get-host).ui.rawui.backgroundcolor;
    fgcolor = (get-host).ui.rawui.foregroundcolor;
 
-   # This is populated at the beginning of each block of test with one of the $DATA.Tests objects
+   # This is populated at the beginning of each block of tests with one of the $DATA.Tests objects
    currentTest = $null;
+
+   # We this will be set to either LTS or Feature based on command line parameters
+   testBranch = "LTS"
 };
 
 $GLOBALS += @{

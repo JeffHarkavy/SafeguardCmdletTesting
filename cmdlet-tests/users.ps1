@@ -15,29 +15,29 @@ $script:blockInfo = $GLOBALS.testBlockHeader()
 $script:completedSuccessfully = $false
 $script:exceptionCaught = $false
 
-$script:delResUser = $GLOBALS.createUser("delres_$($DATA.userUsername)").newUser
+$script:delResUser = $GLOBALS.createUser("delres_$($DATA.basicUser.userName)").newUser
 
 function script:Cleanup() {
    ###############################################################################
    $GLOBALS.writeCallHeader("Cleanup")
    ###############################################################################
 
-   try { Remove-SafeguardUser -UserToDelete $DATA.userUsername -ErrorAction SilentlyContinue > $null } catch {}
+   try { Remove-SafeguardUser -UserToDelete $DATA.basicUser.userName -ErrorAction SilentlyContinue > $null } catch {}
    try { Remove-SafeguardUser -UserToDelete $DATA.renamedUsername -ErrorAction SilentlyContinue > $null } catch {}
    try { Remove-SafeguardUser -UserToDelete $script:delResUser -ErrorAction SilentlyContinue > $null } catch {}
 }
 
 try {
    # this will throw an exception if the user can not be found or created
-   $newUser = $GLOBALS.createUser($DATA.userUsername).newUser
+   $newUser = $GLOBALS.createUser($DATA.basicUser.userName).newUser
 
-   $getuser = Get-SafeguardUser -UserToGet $DATA.userUsername
-   $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardUser"; message = "Successfully got $($Data.userUserName)"; })
+   $getuser = Get-SafeguardUser -UserToGet $DATA.basicUser.userName
+   $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardUser"; message = "Successfully got $($DATA.basicUser.userName)"; })
 
-   Set-SafeguardUserPassword -Password $DATA.secUserPassword -UserToEdit $DATA.userUsername > $null
+   Set-SafeguardUserPassword -Password $DATA.basicUser.secPassword -UserToEdit $DATA.basicUser.userName > $null
    $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Set-SafeguardUserPassword"; message = "$($newUser.Name) created"; })
-   $newUser = Edit-SafeguardUser -UserToEdit $DATA.userUsername -EmailAddress $DATA.userEmail
-   if (-not $newUser.EmailAddress.Contains($DATA.userEmail)) { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardUser"; message = "Email address failed"; }) }
+   $newUser = Edit-SafeguardUser -UserToEdit $DATA.basicUser.userName -EmailAddress $DATA.basicUser.userEmail
+   if (-not $newUser.EmailAddress.Contains($DATA.basicUser.userEmail)) { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardUser"; message = "Email address failed"; }) }
    else { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Edit-SafeguardUser"; message = "successfully changed email to $($newUser.EmailAddress)"; }) }
 
    $newUser = Disable-SafeguardUser -UserToEdit $newUser.Name
@@ -55,9 +55,9 @@ try {
       $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Rename-SafeguardUser"; message = "User $($newUser.Name) NOT renamed"; })
    }
 
-   $foundUser = Find-SafeguardUser $Data.userUserName
-   if ($foundUser) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardUser"; message = "found $($Data.userUserName)"; }) }
-   else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardUser"; message = "DID NOT find $($Data.userUserName)"; }) }
+   $foundUser = Find-SafeguardUser $DATA.basicUser.userName
+   if ($foundUser) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardUser"; message = "found $($DATA.basicUser.userName)"; }) }
+   else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardUser"; message = "DID NOT find $($DATA.basicUser.userName)"; }) }
 
    # create a user to delete, restore, and remove
    Remove-SafeguardUser $script:delResUser.Name > $null

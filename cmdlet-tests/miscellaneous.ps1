@@ -124,22 +124,13 @@ try {
    $GLOBALS.writeCallHeader("Archive Server")
    ###############################################################################
    try {
-      $archiveServer = New-SafeguardArchiveServer -DisplayName $DATA.realArchiveServer.archSrvName `
-        -NetworkAddress $DATA.realArchiveServer.NetworkAddress `
-        -TransferProtocol $DATA.realArchiveServer.TransferProtocol `
-        -Port $DATA.realArchiveServer.Port `
-        -StoragePath $DATA.realArchiveServer.StoragePath `
-        -ServiceAccountCredentialType $DATA.realArchiveServer.ServiceAccountCredentialType `
-        -ServiceAccountName $DATA.realArchiveServer.ServiceAccountName `
-        -ServiceAccountPassword $DATA.realArchiveServer.ServiceAccountPassword `
-        -AcceptSshHostKey
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardArchiveServer"; message = "Successfully created Archive Server $($DATA.realArchiveServer.archSrvName) Id=$($archiveServer.Id)"; })
+      $archiveServer = $GLOBALS.createArchiveServer()
 
       $editedArchiveServer = Edit-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id -Description "Edited ArchSrv description"
       if ($editedArchiveServer.Description -match "ArchSrv") {
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Edit-SafeguardArchiveServer"; message = "Successfully editd Archive Server $($DATA.realArchiveServer.archSrvName), Description=$($archiveServer.Description)"; })
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Edit-SafeguardArchiveServer"; message = "Successfully editd Archive Server $($DATA.realArchiveServer.DisplayName), Description=$($archiveServer.Description)"; })
       } else {
-         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardArchiveServer"; message = "Editing Archive Server $($DATA.realArchiveServer.archSrvName) was NOT successful"; })
+         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardArchiveServer"; message = "Editing Archive Server $($DATA.realArchiveServer.DisplayName) was NOT successful"; })
       }
 
       $archiveServer = Get-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id
@@ -149,7 +140,7 @@ try {
       $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Test-SafeguardArchiveServer"; message = "Successfully called test on Archive Server $($archiveServer.DisplayName) Id=$($archiveServer.Id). Check results to see test *worked* as expected."; })
 
       Remove-SafeguardArchiveServer -ArchiveServerId $archiveServer.Id > $null
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Remove-SafeguardArchiveServer"; message = "Successfully removed Archive Server $($DATA.realArchiveServer.archSrvName) Id=$($archiveServer.Id)"; })
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Remove-SafeguardArchiveServer"; message = "Successfully removed Archive Server $($DATA.realArchiveServer.DisplayName) Id=$($archiveServer.Id)"; })
 
       try {
          $waitResults = Wait-SafeguardApplianceStateOnline -Timeout 10

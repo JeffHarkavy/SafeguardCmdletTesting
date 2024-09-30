@@ -19,7 +19,7 @@ function script:Cleanup() {
    ###############################################################################
 
    try { if ($script:directoryAdded -eq 1) { Remove-SafeguardDirectory -DirectoryToDelete $DATA.domainName -ErrorAction SilentlyContinue > $null } } catch {}
-   try { if ($script:userAdded -eq 1) { Remove-SafeguardUser -UserToDelete $DATA.userUsername -ErrorAction SilentlyContinue > $null } } catch {}
+   try { if ($script:userAdded -eq 1) { Remove-SafeguardUser -UserToDelete $DATA.basicUser.userName -ErrorAction SilentlyContinue > $null } } catch {}
 }
 
 try {
@@ -138,26 +138,26 @@ try {
    $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Sync-SafeguardDirectoryAsset"; message = "Successful called sync on directory asset $($DATA.domainName)"; })
 
    try {
-      $newUser = $GLOBALS.createUser($DATA.userUsername).newUser
+      $newUser = $GLOBALS.createUser($DATA.basicUser.userName).newUser
    }
    catch {
       # Not fatal, just skip the linked account tests if we don't have a user
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Add-SafeguardUserLinkedAccount"; message = "$DATA.userUserName not created or available. Skipping LinkedAccount tests"; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Add-SafeguardUserLinkedAccount"; message = "$DATA.basicUser.userName not created or available. Skipping LinkedAccount tests"; })
    }
 
    if ($newUser) {
-      $linked = Add-SafeguardUserLinkedAccount -UserToSet $DATA.userUserName -DirectoryToAdd $DATA.domainName -AccountToAdd $DATA.directoryAccounts[0]
-      if ($linked.Name -eq $DATA.directoryAccounts[0]) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Add-SafeguardUserLinkedAccount"; message = "Added Linked $($DATA.directoryAccounts[0]) account to $($DATA.userUserName)"; }) }
+      $linked = Add-SafeguardUserLinkedAccount -UserToSet $DATA.basicUser.userName -DirectoryToAdd $DATA.domainName -AccountToAdd $DATA.directoryAccounts[0]
+      if ($linked.Name -eq $DATA.directoryAccounts[0]) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Add-SafeguardUserLinkedAccount"; message = "Added Linked $($DATA.directoryAccounts[0]) account to $($DATA.basicUser.userName)"; }) }
       else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Add-SafeguardUserLinkedAccount"; message = "Add linked account failed"; }) }
       try {
-         $linked = Get-SafeguardUserLinkedAccount -UserToGet $DATA.userUserName
-         foreach ($acct in $linked) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardUserLinkedAccount"; message = "User $($DATA.userUserName) linked account $($acct.Name)"; }) }
+         $linked = Get-SafeguardUserLinkedAccount -UserToGet $DATA.basicUser.userName
+         foreach ($acct in $linked) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardUserLinkedAccount"; message = "User $($DATA.basicUser.userName) linked account $($acct.Name)"; }) }
       } catch {
          $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Get-SafeguardUserLinkedAccount"; message = "Failed"; ex = $_; })
       }
       try {
-         Remove-SafeguardUserLinkedAccount -UserToSet $DATA.userUserName -DirectoryToRemove $DATA.domainName -AccountToRemove $DATA.directoryAccounts[0] > $null
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Remove-SafeguardUserLinkedAccount"; message = "Successfully removed linked account from $($DATA.userUserName)"; })
+         Remove-SafeguardUserLinkedAccount -UserToSet $DATA.basicUser.userName -DirectoryToRemove $DATA.domainName -AccountToRemove $DATA.directoryAccounts[0] > $null
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Remove-SafeguardUserLinkedAccount"; message = "Successfully removed linked account from $($DATA.basicUser.userName)"; })
       } catch {
          $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Remove-SafeguardUserLinkedAccount"; message = "Failed"; ex = $_; })
       }

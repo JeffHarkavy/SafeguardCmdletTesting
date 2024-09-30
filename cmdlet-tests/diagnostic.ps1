@@ -11,7 +11,7 @@ $script:completedSuccessfully = $false
 $script:exceptionCaught = $false
 
 try {
-   $localDiagnosticPackageFilename = "cmdlet-test-sgdiagnosticpackage_$testBranch_$("{0:yyyy}{0:MM}{0:dd}_{0:HH}{0:mm}{0:ss}" -f (Get-Date)).sgb"
+   $localDiagnosticPackageFilename = "cmdlet-test-sgdiagnosticpackage_$($GLOBALS.testBranch)_$(getTimestamp 1).sgb"
    $localDiagnosticPackageFilePath = "$($DATA.filePaths.logs)\$localDiagnosticPackageFilename"
 
    $diagon = Clear-SafeguardDiagnosticPackage

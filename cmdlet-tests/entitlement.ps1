@@ -19,11 +19,11 @@ function script:Cleanup() {
    ###############################################################################
 
    try { Remove-SafeguardEntitlement -EntitlementToDelete "$($DATA.entitlementName)" -ErrorAction SilentlyContinue > $null } catch {}
-   try { Remove-SafeguardAsset -AssetToDelete "$($DATA.assetName)" -ErrorAction SilentlyContinue > $null } catch {}
+   try { Remove-SafeguardAsset -AssetToDelete "$($DATA.asset.DisplayName)" -ErrorAction SilentlyContinue > $null } catch {}
 }
 
 try {
-   $entUser = $GLOBALS.createUser($DATA.userUserName).newUser
+   $entUser = $GLOBALS.createUser($DATA.basicUser.userName).newUser
 
    try {
       Get-SafeguardEntitlement -EntitlementToGet $DATA.entitlementName > $null
@@ -37,29 +37,27 @@ try {
    $entitlement = Get-SafeguardEntitlement -EntitlementToGet $DATA.entitlementName
    $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardEntitlement"; message = "Successfully retrieved entitlement $($entitlement.Name)"; })
 
-   $asset = Find-SafeguardAsset $DATA.assetName
-   if ($asset) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "found $($DATA.assetName)"; }) }
+   $asset = Find-SafeguardAsset $DATA.asset.DisplayName
+   if ($asset) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "found $($DATA.asset.DisplayName)"; }) }
    else {
-      $asset = New-SafeguardAsset -DisplayName "$($DATA.assetName)" -Platform $DATA.assetPlatform -NetworkAddress $DATA.assetIpAddress `
-         -ServiceAccountCredentialType Password -ServiceAccountName $DATA.assetServiceAccount -ServiceAccountPassword $DATA.assetServiceAccountPassword `
-         -AcceptSshHostKey
+      $asset = $GLOBALS.createAsset($true)
    }
    try {
       foreach ($acctname in $DATA.assetAccounts.GetEnumerator()) {
-         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.assetName)' and Name eq '$acctname'"
-         if ($found) { $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "New-SafeguardDirectoryAccount"; message = "$acctname already exists on $($DATA.assetName)"; }) }
+         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.asset.DisplayName)' and Name eq '$acctname'"
+         if ($found) { $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "New-SafeguardDirectoryAccount"; message = "$acctname already exists on $($DATA.asset.DisplayName)"; }) }
          else {
             try {
-               $newacct = New-SafeguardAssetAccount -ParentAsset $DATA.assetName -NewAccountName $acctname
-               $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccount"; message = "$acctName successfully created on $($DATA.assetName)"; })
+               $newacct = New-SafeguardAssetAccount -ParentAsset $DATA.asset.DisplayName -NewAccountName $acctname
+               $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccount"; message = "$acctName successfully created on $($DATA.asset.DisplayName)"; })
             } catch {
-               $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "New-SafeguardAssetAccount"; message = "Unexpected error creating $acctName on $($DATA.assetName)"; ex = $_; })
+               $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "New-SafeguardAssetAccount"; message = "Unexpected error creating $acctName on $($DATA.asset.DisplayName)"; ex = $_; })
             }
          }
       }
    }
    catch {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "general"; message = "Unexpected error creating Asset Accounts on $($DATA.assetName)" ; ex = $_; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "general"; message = "Unexpected error creating Asset Accounts on $($DATA.asset.DisplayName)" ; ex = $_; })
       throw $_
    }
 
@@ -76,11 +74,11 @@ try {
    $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardAccessPolicy"; message = "Successfully retrieved entitlement $($DATA.entitlementName) policy $($accessPolicy.Name)"; })
    $GLOBALS.formatTable(@{ output = $result; })
 
-   $result = Get-SafeguardPolicyAccount -AssetToGet $DATA.assetName
+   $result = Get-SafeguardPolicyAccount -AssetToGet $DATA.asset.DisplayName
    $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardPolicyAccount"; message = "Successfully retrieved account policy"; })
    $GLOBALS.formatTable(@{ output = $result; })
 
-   $result = Get-SafeguardPolicyAsset -AssetToGet $DATA.assetName
+   $result = Get-SafeguardPolicyAsset -AssetToGet $DATA.asset.DisplayName
    $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardPolicyAsset"; message = "Successfully retrieved asset policy"; })
    $GLOBALS.formatTable(@{ output = $result; })
 
@@ -96,9 +94,9 @@ try {
    if ($acctPolicy) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardPolicyAccount"; message = "Found policy $($acctPolicy.Name) for account $($DATA.assetAccounts[0])"; }) }
    else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardPolicyAccount"; message = "Failed to find policy $($acctPolicy.Name) for account $($DATA.assetAccounts[0])"; }) }
 
-   $assetPolicy = Find-SafeguardPolicyAsset $DATA.assetName
-   if ($assetPolicy) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardPolicyAsset"; message = "Found policy $($acctPolicy.Name) for account $($DATA.assetName)"; }) }
-   else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardPolicyAsset"; message = "Failed to find policy $($acctPolicy.Name) for account $($DATA.assetName)"; }) }
+   $assetPolicy = Find-SafeguardPolicyAsset $DATA.asset.DisplayName
+   if ($assetPolicy) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardPolicyAsset"; message = "Found policy $($acctPolicy.Name) for account $($DATA.asset.DisplayName)"; }) }
+   else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardPolicyAsset"; message = "Failed to find policy $($acctPolicy.Name) for account $($DATA.asset.DisplayName)"; }) }
 
    $result = Get-SafeguardAccessPolicyScopeItem -PolicyToGet $accessPolicy.Name
    $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardAccessPolicyScopeItem"; message = "Successfully retrieved policy $($accessPolicy.Name)"; })

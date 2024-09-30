@@ -20,7 +20,7 @@ function script:Cleanup() {
    try { Remove-SafeguardUserGroup -GroupToDelete "$($DATA.userGroupName)" -ErrorAction SilentlyContinue > $null } catch {}
    try { Remove-SafeguardAssetGroup -GroupToDelete "$($DATA.assetGroupName)" -ErrorAction SilentlyContinue > $null } catch {}
    try { Remove-SafeguardAccountGroup -GroupToDelete "$($DATA.accountGroupName)" -ErrorAction SilentlyContinue > $null } catch {}
-   if ($script:removeNewGroupUser) { try { Remove-SafeguardUser -UserToDelete $DATA.userUsername -ErrorAction SilentlyContinue > $null } catch {} }
+   if ($script:removeNewGroupUser) { try { Remove-SafeguardUser -UserToDelete $DATA.basicUser.userName -ErrorAction SilentlyContinue > $null } catch {} }
 }
 
 try {
@@ -76,37 +76,37 @@ try {
 
    try {
       try {
-         New-SafeguardUser -NewUserName $DATA.userUsername -FirstName "Safeguard-ps" -LastName "User" -NoPassword -Provider -1 > $null
+         New-SafeguardUser -NewUserName $DATA.basicUser.userName -FirstName "Safeguard-ps" -LastName "User" -NoPassword -Provider -1 > $null
          $script:removeNewGroupUser = $true
       } catch {
-         $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "New-SafeguardUser"; message = "User $($DATA.userUsername) already exists for user group testing"; })
+         $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "New-SafeguardUser"; message = "User $($DATA.basicUser.userName) already exists for user group testing"; })
       }
 
-      Add-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.userUsername > $null
+      Add-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.basicUser.userName > $null
       $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).Name
-      if ($DATA.userUsername -in $groupMembers) {
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Add-SafeguardUserGroupMember"; message = "$($DATA.userUsername) successfully added to $($userGroup.Name)"; })
+      if ($DATA.basicUser.userName -in $groupMembers) {
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Add-SafeguardUserGroupMember"; message = "$($DATA.basicUser.userName) successfully added to $($userGroup.Name)"; })
       }
       else {
-         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Add-SafeguardUserGroupMember"; message = "$($DATA.userUsername) NOT found in $($userGroup.Name)"; })
+         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Add-SafeguardUserGroupMember"; message = "$($DATA.basicUser.userName) NOT found in $($userGroup.Name)"; })
       }
 
-      Remove-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.userUsername > $null
+      Remove-SafeguardUserGroupMember -Group $userGroup.Name -UserList $DATA.basicUser.userName > $null
       $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).UserName
-      if ($null -eq $groupMembers -or -not $DATA.userUsername -in $groupMembers) {
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Remove-SafeguardUserGroupMember"; message = "$($DATA.userUsername) successfully removed from $($userGroup.Name)"; })
+      if ($null -eq $groupMembers -or -not $DATA.basicUser.userName -in $groupMembers) {
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Remove-SafeguardUserGroupMember"; message = "$($DATA.basicUser.userName) successfully removed from $($userGroup.Name)"; })
       }
       else {
-         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Remove-SafeguardUserGroupMember"; message = "$($DATA.userUsername) NOT found in $($userGroup.Name)"; })
+         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Remove-SafeguardUserGroupMember"; message = "$($DATA.basicUser.userName) NOT found in $($userGroup.Name)"; })
       }
 
-      Edit-SafeguardUserGroup -GroupToEdit $userGroup.Name -UserList $DATA.userUsername -Operation add > $null
+      Edit-SafeguardUserGroup -GroupToEdit $userGroup.Name -UserList $DATA.basicUser.userName -Operation add > $null
       $groupMembers = (Get-SafeguardUserGroupMember -Group $userGroup.Name).Name
-      if ($DATA.userUsername -in $groupMembers) {
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Edit-SafeguardUserGroup"; message = "$($DATA.userUsername) successfully edited to add to $($userGroup.Name)"; })
+      if ($DATA.basicUser.userName -in $groupMembers) {
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Edit-SafeguardUserGroup"; message = "$($DATA.basicUser.userName) successfully edited to add to $($userGroup.Name)"; })
       }
       else {
-         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardUserGroup"; message = "$($DATA.userUsername) NOT edited to add to $($userGroup.Name)"; })
+         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardUserGroup"; message = "$($DATA.basicUser.userName) NOT edited to add to $($userGroup.Name)"; })
       }
 
       Remove-SafeguardUserGroup -GroupToDelete "$($DATA.userGroupName)" > $null

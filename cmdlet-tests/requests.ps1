@@ -119,23 +119,20 @@ try {
    }
 
    try {
-      $asset = Find-SafeguardAsset $DATA.assetName
-      if ($asset) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "found $($DATA.assetName)"; }) }
+      $asset = Find-SafeguardAsset $DATA.asset.DisplayName
+      if ($asset) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "found $($DATA.asset.DisplayName)"; }) }
       else {
-         $asset = New-SafeguardAsset -DisplayName "$($DATA.assetName)" -Platform $DATA.assetPlatform -NetworkAddress $DATA.assetIpAddress `
-            -ServiceAccountCredentialType Password -ServiceAccountName $DATA.assetServiceAccount -ServiceAccountPassword $DATA.assetServiceAccountPassword `
-            -AcceptSshHostKey
-        $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAsset"; message = "successfully asset $($DATA.assetName)"; })
+        $asset = $GLOBALS.createAsset()
         $script:createdItems.Assets += $asset
       }
       $script:assets += $asset
 
       foreach ($acctName in $DATA.assetAccounts.GetEnumerator()) {
-         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.assetName)' and Name eq '$acctname'"
-         if ($found) { $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAssetAccount"; message = "$acctName already exists on $($DATA.assetName)"; }) }
+         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.asset.DisplayName)' and Name eq '$acctname'"
+         if ($found) { $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAssetAccount"; message = "$acctName already exists on $($DATA.asset.DisplayName)"; }) }
          else {
-            $found = New-SafeguardAssetAccount -ParentAsset $DATA.assetName -NewAccountName $acctname
-            $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccount"; message = "$acctName successfully created on $($DATA.assetName)"; })
+            $found = New-SafeguardAssetAccount -ParentAsset $DATA.asset.DisplayName -NewAccountName $acctname
+            $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccount"; message = "$acctName successfully created on $($DATA.asset.DisplayName)"; })
             $script:createdItems.AssetAccounts += $found
          }
          Set-SafeguardAssetAccountPassword -AccountToSet $found -NewPassword $securePassword > $null
@@ -186,15 +183,13 @@ try {
             else {
                $policyBody = $DATA.accessPolicyBodyString.$local:key.Replace("#ENTITLEMENT_ID#", $entitlement.Id)
                $policyBody = $policyBody.Replace("#SCOPE_ITEMS#", $local:jsonAccountScopes)
+               $connectionPolicy = $null
                if (@('SshSession', 'RdpSession') -contains $local:key) {
                   $url = 'Cluster/SessionModules/' + ($script:sessionAppliances[0].Id) + '/ConnectionPolicies'
                   $connectionPolicy = Invoke-SafeguardMethod Core GET $url -Parameters @{ protocol = $key.replace('Session', ''); filter = "Name eq 'safeguard_$(iif $($local:key -match 'Rdp') 'rdp' 'default')'" }
-                  $policyBody = $policyBody.Replace("#CONNECTION_MODULE#", $connectionPolicy.SessionModuleConnectionId)
-                  $policyBody = $policyBody.Replace("#CONNECTION_POLICY#", $connectionPolicy.Id)
-               } else {
-                  $policyBody = $policyBody.Replace("#CONNECTION_MODULE#", '')
-                  $policyBody = $policyBody.Replace("#CONNECTION_POLICY#", '')
                }
+               $policyBody = $policyBody.Replace("#CONNECTION_MODULE#", $(ifIsNull $connectionPolicy.SessionModuleConnectionId ''))
+               $policyBody = $policyBody.Replace("#CONNECTION_POLICY#", $(ifIsNull $connectionPolicy.Id ''))
                $convertedJson = ConvertFrom-Json $policyBody
                $accessPolicy = Invoke-SafeguardMethod Core Post AccessPolicies -Body $convertedJson
 

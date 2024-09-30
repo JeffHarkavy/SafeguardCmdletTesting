@@ -277,7 +277,7 @@ try {
    # Create-EntitlementPolicy
    Write-Host "Create-EntitlementPolicy"
    #region Entitlement/Policy
-   $user = Get-SafeguardUser -UserToGet $DATA.userName
+   $user = Get-SafeguardUser -UserToGet $DATA.superUser.userName
    $newEntitlement = New-SafeguardEntitlement "Entitlements" $user.Id
    $allSessionModules = Invoke-SafeguardMethod Core GET Cluster/SessionModules
    $url = 'Cluster/SessionModules/' + ($allSessionModules[0].Id) + '/ConnectionPolicies'

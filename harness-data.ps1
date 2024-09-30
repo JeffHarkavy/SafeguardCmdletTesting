@@ -27,11 +27,11 @@ $DATA = @{
    # uber-admin user with all admin permissions. The same user will be used
    # to run all commands unless otherwise noted.
    # This user must already exist on your SPP appliances.
-   userName = "sgAdmin";
-   secPassword = "Admin4SG" | ConvertTo-SecureString -AsPlainText -Force;
-
-   # login provider for the above
-   idProvider = "local";
+   superUser = @{
+      userName = "sgAdmin";
+      secPassword = "Admin4SG" | ConvertTo-SecureString -AsPlainText -Force;
+      idProvider = "local";
+   }
 
    # admin user and password for any SPS appliances. Again, the same user
    # needs to be provisioned on all appliances.
@@ -40,17 +40,20 @@ $DATA = @{
    SPSAdminPassword = "Root4EDMZ" | ConvertTo-SecureString -AsPlainText -Force;
 
    # peon user who will be added and manipulated
-   userUsername = "safeguard-ps-user";
-   secUserPassword = "Password1" | ConvertTo-SecureString -AsPlainText -Force;
-   userEmail = "blah@test.com";
+   basicUser = @{
+      userName = "safeguard-ps-user";
+      secPassword = "Password1" | ConvertTo-SecureString -AsPlainText -Force;
+      userEmail = "blah@test.com";
+      idProvider = "local";
+   }
 
    # request workflow related users - note the hella-secure passwords
    # These will be created if they're not already present. All are expected
    # to use the idProvider specified above for authentication.
    requestWorkflowUsers = @{
-      Requester = @{ UserName = "requester"; FirstName = "Global"; LastName = "Requester"; SecPassword = "Password 4 requester" | ConvertTo-SecureString -AsPlainText -Force; IdProvider = "local"; };
-      Approver =  @{ UserName = "approver";  FirstName = "Global"; LastName = "Approver";  SecPassword = "Password 4 approver" | ConvertTo-SecureString -AsPlainText -Force; IdProvider = "local"; };
-      Reviewer =  @{ UserName = "reviewer";  FirstName = "Global"; LastName = "Reviewer";  SecPassword = "Password 4 reviewer" | ConvertTo-SecureString -AsPlainText -Force; IdProvider = "local"; };
+      Requester = @{ UserName = "requester"; FirstName = "Global"; LastName = "Requester"; IdProvider = "local"; SecPassword = "Password 4 requester" | ConvertTo-SecureString -AsPlainText -Force; };
+      Approver =  @{ UserName = "approver";  FirstName = "Global"; LastName = "Approver";  IdProvider = "local"; SecPassword = "Password 4 approver" | ConvertTo-SecureString -AsPlainText -Force; };
+      Reviewer =  @{ UserName = "reviewer";  FirstName = "Global"; LastName = "Reviewer";  IdProvider = "local"; SecPassword = "Password 4 reviewer" | ConvertTo-SecureString -AsPlainText -Force; };
    }
 
    # Other users used for specific purposes. Will be created if not already there.
@@ -61,7 +64,7 @@ $DATA = @{
    # This networkaddress will also be used in network-diagnostics, backups, filter-properties, etc.
    # Make sure to edit this to fit your environment.
    realArchiveServer = @{
-      archSrvName = "ps.ArchSrv_001";
+      DisplayName = "ps.ArchSrv_001";
       NetworkAddress = "10.9.6.69";
       TransferProtocol = "Scp";
       Port = "22";
@@ -73,11 +76,20 @@ $DATA = @{
 
    # names of assets, accounts, and groups to be created and meddled with.
    # Asset and accounts are expected to be "real" and reachable during tests.
-   assetName = "ps.Asset_001";
-   assetServiceAccount = "jeff";
-   assetServiceAccountPassword = "Root4EDMZ" | ConvertTo-SecureString -AsPlainText -Force;
-   assetIpAddress = "10.9.6.69";
-   assetPlatform = "Ubuntu 16.04 LTS x86_64";
+   # Used to splat the parameters for creating a new asset, so if any properties
+   # are added make sure they conform to expected parameters for New-SafegaurdAsset.
+   asset = @{
+      DisplayName = "ps.Asset_001";
+      ServiceAccountName = "jeff";
+      ServiceAccountPassword = "Root4EDMZ" | ConvertTo-SecureString -AsPlainText -Force;
+      NetworkAddress = "10.9.6.69";
+      Platform = "Ubuntu 20.04 x86_64";
+      ServiceAccountCredentialType = "Password";
+      AcceptSshHostKey = $true;
+      PrivilegeElevationCommand = "sudo";
+   };
+
+   # Other information about assets and accounts and such
    assetAccounts = @("user_0001","user_0002","user_0003","user_0004","user_0005");
    userGroupName = "ps.UserGroup_001";
    assetGroupName = "ps.AssetGroup_001";
@@ -109,7 +121,7 @@ $DATA = @{
 
    # when createLog is true the main harness will do a Start-Transcript to capture all output
    # Oldest Logs will be removed when maxLogs count is reached
-   logName = "$($BASE_NAME)_$("{0:yyyy}{0:MM}{0:dd}_{0:HH}{0:mm}{0:ss}" -f (Get-Date)).log";
+   logName = "$($BASE_NAME)_$(getTimestamp 1).log";
    maxLogs = 5;
 
    # Default line limit when using GLOBALS.formatTable output function
@@ -129,7 +141,7 @@ $DATA = @{
    };
 }
 
-# For things that need to be created based on other hashtable members
+# For things that need to be created based on other DATA hashtable members
 $DATA += @{
    #license files to be used for license remove/install testing
    licenseFiles = @{
@@ -156,13 +168,13 @@ $DATA += @{
    patchPathLTS = "G:\$($DATA.LTSVersion)\Patch\prod\";
    patchPathFeature = "G:\$($DATA.FeatureVersion)\Patch\prod\";
 
-   # TODO still deciding on what to do with clustering...
+   # TODO still deciding on what to do with clustering for SPS...
    clusterPrimaryLTS = $DATA.applianceLTS;
    clusterReplicasLTS = @("10.9.4.223","10.9.4.224");
    clusterSessionLTS = @("10.9.4.220");
    clusterPrimaryFeature = $DATA.applianceFeature;
    clusterReplicasFeature = @("10.9.4.228","10.9.4.229");
-   clusterSessionFeature = @("10.9.4.225","10.9.4.226");
+   clusterSessionFeature = @("10.9.4.225");
 
    # Based on cmdline args will be set to either LTS or feature appliance values
    # These appliances are expected to accept the same uber-admin name and
@@ -235,7 +247,7 @@ $local:sshAccessPolicyString = $local:baseAccessPolicyString.replace('#ACCESS_RE
 $local:rdpAccessPolicyString = $local:sshAccessPolicyString.replace('"AccessRequestType": "Ssh"', '"AccessRequestType": "RemoteDesktop"')
 
 $DATA += @{
-   # Gets used in entitlements and filter-properties
+   # Used filter-properties tests to create a simple access policy to test
    accessPolicy = @{
       Name = "$($DATA.accessPolicyName)";
       Description = "Test Access Policy Description";
@@ -263,6 +275,7 @@ $DATA += @{
       );
    }
 
+   # used in Entitlements and Requests tests
    accessPolicyBodyString = @{
       Password = ($local:passwordAccessPolicyString -replace '[\r\n ]+', '').replace('#NAME#', 'Password Access Policy');
       SshKey = ($local:sshKeyAccessPolicyString -replace '[\r\n ]+', '').replace('#NAME#', 'SshKey Access Policy');

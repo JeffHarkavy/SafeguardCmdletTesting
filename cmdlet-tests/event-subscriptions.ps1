@@ -19,19 +19,19 @@ function script:Cleanup() {
    ###############################################################################
 
    if ($script:subscriptionId) { try { Remove-SafeguardEventSubscription -SubscriptionId $script:subscriptionId -ErrorAction SilentlyContinue > $null} catch {} }
-   try { if ($script:removeAsset) {Remove-SafeguardAsset -AssetToDelete $DATA.assetName -ErrorAction SilentlyContinue > $null} } catch {}
+   try { if ($script:removeAsset) {Remove-SafeguardAsset -AssetToDelete $DATA.asset.DisplayName -ErrorAction SilentlyContinue > $null} } catch {}
 }
 
 try {
-   $eventAsset = Find-SafeguardAsset -SearchString "$($DATA.assetName)"
+   $eventAsset = Find-SafeguardAsset -SearchString "$($DATA.asset.DisplayName)"
    if (-not $eventAsset) {
-      $eventAsset = New-SafeguardAsset -DisplayName "$($DATA.assetName)" -Platform "Ubuntu 20.04 x86_64" -NetworkAddress "1.2.3.4" `
-         -ServiceAccountCredentialType Password -ServiceAccountName funcacct -ServiceAccountPassword $DATA.secUserPassword `
+      $eventAsset = New-SafeguardAsset -DisplayName "$($DATA.asset.DisplayName)" -Platform "Ubuntu 20.04 x86_64" -NetworkAddress "1.2.3.4" `
+         -ServiceAccountCredentialType Password -ServiceAccountName funcacct -ServiceAccountPassword $DATA.basicUser.secPassword `
          -NoSshHostKeyDiscovery
       $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "New-SafeguardAsset"; message = "$($eventAsset.Name) added for event subscription. Will be removed when done."; })
       $script:removeAsset = $true
    } else {
-      $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "Using existing $($DATA.assetName) for event subscription"; })
+      $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "Using existing $($DATA.asset.DisplayName) for event subscription"; })
    }
    $subscription = New-SafeguardEventSubscription -ObjectTypeToSubscribe Asset -ObjectIdToSubscribe $eventAsset.Name -SubscriptionEvent AssetCreated
    $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardEventSubscription"; message = "Successfully created event Subscription Id=$($subscription.Id)"; })

@@ -3,7 +3,7 @@
   exit
 }
 
-# write output using hashes from the GLOBALS.COLORS object
+# write colored output using hashes from the GLOBALS.COLORS object
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name writeHostColor -Value {
   param($color, $message, $nonewline)
   $color = ifIsNull $color @{ForegroundColor=$GLOBALS.fgcolor; BackgroundColor=$GLOBALS.bgcolor;}
@@ -17,17 +17,16 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name writeHostColor -Value {
 
 # Writes begin/end header blocks for groups of tests
 #
-# $hdrText             - Some type of descriptive text to include, typically the name
-#                        of the block of tests
-# $startInfo is null   - indicates a BEGIN block will be written and
-#                        $startInfo object will be created and returned
-# $startInfo is Int    - Same as null, indicates begin of test block and
-#                        indicates the number of expected tests
+# $startInfo is String - Indicates a BEGIN block will be written using the provided
+#                        text as the block name. $startInfo object will be created and returned
+# $startInfo is null   - Indicates a BEGIN block will be written using the current
+#                        test block name. $startInfo object will be created and returned
 # $startInfo is object - pass the startInfo block back to indicate END of
 #                        the test block
 #
 # returns - for a "begin" header it returns a startInfo object which must
-#           be passed in when writing the "end" header
+#           be passed in when writing the "end" header. for an "end" header
+#           there is nothing returned
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name testBlockHeader -Value {
    param($startInfo, $final)
    $final = ifIsNull $final $false
@@ -62,7 +61,7 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name testBlockHeader -Value {
    $blockseparator = "+--------------------------------------------------------------------------+"
    $fmt = "| {0,-" + ($blockline.Length - 3) + "}|"
    $hdrText = "$beginOrEnd $($startInfo.blockName)"
-   $stamp = "{0:MM}-{0:dd}-{0:yyyy} {0:HH}:{0:mm}:{0:ss}.{0:fff}" -f ($currentTime)
+   $stamp = getTimestamp 2 $currentTime
    write-host ""
    write-host $blockline
    foreach ($ln in $hdrText.Split([Environment]::NewLine)) {
@@ -114,7 +113,8 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name writeCallHeader -Value {
    $GLOBALS.writeHostColor($color, "--------------------------------------------------");
 };
 
-# good/info/bad/warning/skip result writers argHash
+# good/info/bad/warning/skip result writers all accept a hash of argument properties
+#
 # minVerbosity - minimum verbosity setting for writing. 0 or $null will always write.
 #                Even if we don't write an error because of verbosity settings the
 #                global resultCounts will still be updated and, in the case of "bad",
@@ -124,9 +124,10 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name writeCallHeader -Value {
 # extra     - extra information (e.g., command output)
 # ex        - optional exception that was thrown for an error situation.
 #             Will pull script line number and message for output,
-# skipCount - number of tests being skipped (default == 1)
-# timing    - a hash table of {startTime=X; endTime=Y} that will include an "Elapsed" message
-#              in the output. if endTime is null/not there the current time will be used.
+# skipCount - number of tests being skipped for skipResult call (default == 1). Ignored
+#             for all others.
+# timing    - A hash table of {startTime=X; endTime=Y} that will include an "Elapsed" message
+#             in the output. If endTime is null the current time will be used.
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name goodResult -Value {
    param ($argHash)
    $GLOBALS.resultWriter($GLOBALS.buildRwHash($argHash, $GLOBALS.COLORS.good, "SUCCESS"))
@@ -208,7 +209,7 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name resultWriter -Value {
 # $maxLines > 0  - show first X lines
 # $maxLines < 0  - show last X lines
 # $maxLines == 0 - show all lines
-# Verbosity s/b set to 2 to show default table output
+# $GLOBALS.Verbosity s/b set to 2 to show default table output
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name formatTable -Value {
    param ($argHash)
    $argHash.minVerbosity = ifIsNull $argHash.minVerbosity 2
@@ -238,6 +239,9 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name formatTable -Value {
 # Displays the script help and exits
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name showHelp -Value {
    param ($commandsOnly = $false)
+   function testDesc($test) {
+      return $test.Description + (iif ($test.interactive -eq "Y") " (1)" "") + (iif ($test.description -match "WIP") " (2)" "")
+   }
 
    if (!$commandsOnly) {
       $GLOBALS.writeHostColor($GLOBALS.COLORS.white, "`
@@ -254,20 +258,21 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name showHelp -Value {
   }
 
   $GLOBALS.writeHostColor($GLOBALS.COLORS.good, "`n  Valid test names are (in order of execution, test counts are approximate): ")
-  $local:header = ('    {0,-20} {1,5}  {2}' -f "Test Name","Count","Description") + "`n" + ('    {0,-20} {1,5}  {2}' -f $('='*20),$('='*5),$('='*50))
+  $local:header = '    {0,-20} {1,5}  {2}' -f "Test Name","Count","Description`n"
+  $local:header += '    {0,-20} {1,5}  {2}' -f $('='*20),$('='*5),$('='*50)
+
   $GLOBALS.writeHostColor($GLOBALS.COLORS.white, $local:header)
   (($DATA.tests.GetEnumerator() | Where-Object {$explicitTestKeys -notcontains $_.Key}) | Sort {$_.Value.Seq}) | `
      foreach-object {
-        $GLOBALS.writeHostColor($GLOBALS.COLORS.white, `
-        ('    {0,-20} {1,5}  {2}' -f $_.Key,(iif $_.Value.testCount $_.Value.testCount 'n/a'),$_.Value.Description + (iif ($_.Value.interactive -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" "")))
+        $GLOBALS.writeHostColor($GLOBALS.COLORS.white, ('    {0,-20} {1,5}  {2}' -f $_.Key,(iif $_.Value.testCount $_.Value.testCount 'n/a'),(testDesc $_.Value)))
      }
   Write-Host ""
+
   $GLOBALS.writeHostColor($GLOBALS.COLORS.good, "  The following tests must be individually requested or ""allexplicit"" must be specified:")
   $GLOBALS.writeHostColor($GLOBALS.COLORS.white, $local:header)
   (($DATA.tests.GetEnumerator() | Where-Object {$explicitTestKeys -contains $_.Key}) | Sort {$_.Value.Seq}) | `
      foreach-object {
-        $GLOBALS.writeHostColor($GLOBALS.COLORS.white, `
-        ('    {0,-20} {1,5}  {2}' -f $_.Key,(iif $_.Value.testCount $_.Value.testCount 'n/a'),$_.Value.Description + (iif ($_.Value.interactive -eq "Y") " (1)" "") + (iif ($_.Value.description -match "WIP") " (2)" "")))
+        $GLOBALS.writeHostColor($GLOBALS.COLORS.white, ('    {0,-20} {1,5}  {2}' -f $_.Key,(iif $_.Value.testCount $_.Value.testCount 'n/a'),(testDesc $_.Value)))
      }
   Write-Host ""
   Write-Host "    (1) - Test may require human interaction."
@@ -337,16 +342,48 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name createUser -Value {
    return @{isNew = $local:isNew; newUser = $local:newUser}
 };
 
+# Since we do this in more than one place...
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name createArchiveServer -Value {
+   param($quiet = $false)
+
+   $archiveServer = New-SafeguardArchiveServer -DisplayName $DATA.realArchiveServer.DisplayName `
+     -NetworkAddress $DATA.realArchiveServer.NetworkAddress `
+     -TransferProtocol $DATA.realArchiveServer.TransferProtocol `
+     -Port $DATA.realArchiveServer.Port `
+     -StoragePath $DATA.realArchiveServer.StoragePath `
+     -ServiceAccountCredentialType $DATA.realArchiveServer.ServiceAccountCredentialType `
+     -ServiceAccountName $DATA.realArchiveServer.ServiceAccountName `
+     -ServiceAccountPassword $DATA.realArchiveServer.ServiceAccountPassword `
+     -AcceptSshHostKey
+
+   if (!$quiet) {
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardArchiveServer"; message = "Successfully created Archive Server $($DATA.realArchiveServer.DisplayName) Id=$($archiveServer.Id)"; })
+   }
+
+   return $archiveServer
+}
+
+$GLOBALS | Add-Member -MemberType ScriptMethod -Name createAsset -Value {
+   param($quiet = $false, $assetName = "")
+
+   $assetSplat = $GLOBALS.deepClone($DATA.asset)
+   $assetSplat.DisplayName = ifIsNullOrEmpty $assetName $assetSplat.DisplayName
+   $asset = New-SafeguardAsset @assetSplat
+
+   if (!$quiet) {
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAsset"; message = "successfully asset $($DATA.displayName)"; })
+   }
+
+   return $asset
+}
+
 # Not strictly necessary, but it does make working from the command line a little easier
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name sgConnect -Value {
    param ($appliance,$user,$getToken)
 
    $appliance = ifIsNull $appliance $DATA.appliance
-   $user = ifIsNull $user @{
-      IdProvider = $DATA.idProvider;
-      SecPassword = $DATA.secPassword;
-      UserName = $DATA.userName;
-   }
+   #default to the user to the super-user defined in $DATA unless told otherwise
+   $user = ifIsNull $user $DATA.superUser
 
    if ($getToken) {
       $token = Connect-Safeguard -Appliance $appliance -IdentityProvider $user.idProvider -Password $user.secPassword -Username $user.userName -Insecure -NoSessionVariable
@@ -415,8 +452,8 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name startTranscribing -Value {
       }
 
       Start-Transcript -Path "$($DATA.filePaths.logs + $DATA.logName)"
-
    }
+
    return $GLOBALS.createLog
 };
 
@@ -426,8 +463,8 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name startTranscribing -Value {
 # Call it with no arguments at the head of the test block to set the
 # progress bar to $COLORS.progress and it will return the current colors
 # as a hashmap {bg="color";fg="color"}
-# Call it from the test's "finally" block with that hashmap to reset
-# colors back to what they were.
+# Call it from the test's "finally" block or cleanup function with that
+# hashmap to reset colors back to what they were.
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name setProgressBarColors -Value {
    param ($oldvalues)
 
@@ -461,59 +498,39 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name hashString -Value {
    return $result
 }
 
-# Returns an alternative value if the string is null or empty
-$GLOBALS | Add-Member -MemberType ScriptMethod -Name emptyElse -Value {
-   param ($string, $alternative)
-
-   if ($null -eq $string -or $string -eq "") {
-      $string = $alternative
-   }
-
-   return $string
-}
-
-# Returns an alternative value if the string is null or empty
+# Returns deep clone of an object
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name deepClone -Value {
     param($InputObject)
-    process
-    {
-        if($InputObject -is [hashtable]) {
-            $clone = @{}
-            foreach($key in $InputObject.keys)
-            {
-                $clone[$key] = $GLOBALS.deepClone($InputObject[$key])
-            }
-            return $clone
-        } else {
-            return $InputObject
-        }
-    }
+
+    return [System.Management.Automation.PsSerializer]::Deserialize([System.Management.Automation.PsSerializer]::Serialize($InputObject))
 }
 
-# Does what it says. Process the command line, checks PS version and SSH paths,
-# makes sure keys are in place and key users "work" and all that good stuff.
+# Does what it says. Process the command line and initializes environment for
+# a run of tests.
 $GLOBALS | Add-Member -MemberType ScriptMethod -Name initializeEnvironment -Value {
    param($whichTests)
    $whichTests = ifIsNull $whichTests $DATA.Tests
 
    if ($null -eq $allParameters -or $allParameters.Count -eq 0) {
       $allParameters = @("all")
+   } else {
+      $allParameters =  ($allParameters | ForEach { [Regex]::Escape($_) })
    }
 
    if ($allParameters -contains "all" -and $allParameters -contains "allexplicit") {
       $GLOBALS.writeHostColor($GLOBALS.COLORS.highlight, "ALLEXPLICIT takes precedence over ALL. Only ALLEXPLICIT will be run.")
    }
 
-   $global:testBranch = "LTS"
+   $GLOBALS.testBranch = "LTS"
    if (($allParameters -match "^(lts|(other:)|feature)").length -gt 1) {
       $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "Can not specify more than one of: LTS, Feature, Other")
       exit
    } elseif ($allParameters -contains "lts" -or $allParameters -contains "feature") {
-      $global:testBranch = iif ($allParameters -contains "lts") "LTS" "Feature"
+      $GLOBALS.testBranch = iif ($allParameters -contains "lts") "LTS" "Feature"
    } elseif ($allParameters -match "^other:.+") {
-      $global:testBranch = $allParameters -match "^other:"
+      $GLOBALS.testBranch = $allParameters -match "^other:"
    }
-   $GLOBALS.setTestBranch($global:testBranch) > $null
+   $GLOBALS.setTestBranch($GLOBALS.testBranch) > $null
 
    if ($allParameters -contains "log") {
       $GLOBALS.createLog = $true
@@ -566,7 +583,7 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name initializeEnvironment -Valu
             $GLOBALS.asyncBatchSuffix = ""
          } else {
             $GLOBALS.asyncBatchSuffix = "_B_$($GLOBALS.asyncBatchNumber)"
-            $DATA.logName = "$($BASE_NAME)_transcript_batch#$($GLOBALS.asyncBatchNumber)_$("{0:yyyy}{0:MM}{0:dd}_{0:HH}{0:mm}{0:ss}" -f (Get-Date)).log";
+            $DATA.logName = "$($BASE_NAME)_transcript_batch#$($GLOBALS.asyncBatchNumber)_$(getTimestamp 1).log";
          }
       }
       $allParameters = @($allParameters | Where-Object { $_ -notmatch '^batch=' })
@@ -622,7 +639,7 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name initializeEnvironment -Valu
                }
             }
          } else {
-            $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "$p is not a recognized test name")
+            $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "$([Regex]::Unescape($p)) is not a recognized test name")
             $commandsOnly = $true
             $quit = $true
          }
@@ -653,7 +670,7 @@ $GLOBALS | Add-Member -MemberType ScriptMethod -Name initializeEnvironment -Valu
    $GLOBALS.writeHostColor($GLOBALS.COLORS.bad, "`
       $("$fmt" -f "Appliance", $($DATA.Appliance))`
       $("$fmt" -f "SPS Appliance", $($DATA.clusterSession[0]))`
-      $("$fmt" -f "Admin User", $($DATA.userName))`
+      $("$fmt" -f "Admin User", $($DATA.superUser.userName))`
       $("$fmt" -f "Feature Version", $($DATA.FeatureVersion))`
       $("$fmt" -f "LTS Version", $($DATA.LTSVersion))`
       $("$fmt" -f "Verbosity", $($GLOBALS.Verbosity))`

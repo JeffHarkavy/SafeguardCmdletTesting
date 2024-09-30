@@ -40,63 +40,60 @@ function script:Cleanup() {
 
 try {
    try {
-      $script:asset = Get-SafeguardAsset -AssetToGet "$($DATA.assetName)"
-      $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Get-SafeguardAsset"; message = "Asset $($DATA.assetName) already exists"; })
+      $script:asset = Get-SafeguardAsset -AssetToGet "$($DATA.asset.DisplayName)"
+      $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Get-SafeguardAsset"; message = "Asset $($DATA.asset.DisplayName) already exists"; })
    }
    catch {
       if ($_.Exception.Message -match "unable to find") {
-         $script:asset = New-SafeguardAsset -DisplayName "$($DATA.assetName)" -Platform $DATA.assetPlatform -NetworkAddress $DATA.assetIpAddress `
-            -ServiceAccountCredentialType Password -ServiceAccountName $DATA.assetServiceAccount -ServiceAccountPassword $DATA.assetServiceAccountPassword `
-            -AcceptSshHostKey -PrivilegeElevationCommand "sudo"
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAsset"; message = "$($asset.Name) successfully added"; })
+         $script:asset = $GLOBALS.createAsset()
       }
       else {
-         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Get-SafeguardAsset"; message = "Unexpected error fetching Asset $($DATA.assetName)"; ex = $_; })
+         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Get-SafeguardAsset"; message = "Unexpected error fetching Asset $($DATA.asset.DisplayName)"; ex = $_; })
          throw $_.Exception
       }
    }
-   $asset = Edit-SafeguardAsset -AssetToEdit $DATA.assetName -Description "Description for $($DATA.assetName)"
-   if (-not $asset.Description -contains "Description for $($DATA.assetName)") {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardAsset"; message = "failed for $($DATA.assetName)"; })
+   $asset = Edit-SafeguardAsset -AssetToEdit $DATA.asset.DisplayName -Description "Description for $($DATA.asset.DisplayName)"
+   if (-not $asset.Description -contains "Description for $($DATA.asset.DisplayName)") {
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardAsset"; message = "failed for $($DATA.asset.DisplayName)"; })
    }
 
-   $found = Find-SafeguardAsset $DATA.assetName
-   if ($found) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "found $($DATA.assetName)"; }) }
-   else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardAsset"; message = "DID NOT find $($DATA.assetName)"; }) }
+   $found = Find-SafeguardAsset $DATA.asset.DisplayName
+   if ($found) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAsset"; message = "found $($DATA.asset.DisplayName)"; }) }
+   else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardAsset"; message = "DID NOT find $($DATA.asset.DisplayName)"; }) }
 
    try {
-      $asset = Invoke-SafeguardAssetSshHostKeyDiscovery -Asset $DATA.assetname -AcceptSshHostKey
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Invoke-SafeguardAssetSshHostKeyDiscovery"; message = "Discovered and accepted ssh host key on $($DATA.assetName)"; })
+      $asset = Invoke-SafeguardAssetSshHostKeyDiscovery -Asset $DATA.asset.DisplayName -AcceptSshHostKey
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Invoke-SafeguardAssetSshHostKeyDiscovery"; message = "Discovered and accepted ssh host key on $($DATA.asset.DisplayName)"; })
    } catch {
-      $GLOBALS.badResult(@{ minVerbosity = 1; cmd = "Invoke-SafeguardAssetSshHostKeyDiscovery"; message = "Failure to discover ssh host key on $($DATA.assetName)"; ex = $_; })
+      $GLOBALS.badResult(@{ minVerbosity = 1; cmd = "Invoke-SafeguardAssetSshHostKeyDiscovery"; message = "Failure to discover ssh host key on $($DATA.asset.DisplayName)"; ex = $_; })
    }
 
    try {
       foreach ($acctname in $DATA.assetAccounts.GetEnumerator()) {
-         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.assetName)' and Name eq '$acctname'"
-         if ($found) { $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAssetAccount"; message = "$acctname already exists on $($DATA.assetName)"; }) }
+         $found = Find-SafeguardAssetAccount -QueryFilter "Asset.Name eq '$($DATA.asset.DisplayName)' and Name eq '$acctname'"
+         if ($found) { $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAssetAccount"; message = "$acctname already exists on $($DATA.asset.DisplayName)"; }) }
          else {
             try {
-               $newacct = New-SafeguardAssetAccount -ParentAsset $DATA.assetName -NewAccountName $acctname
-               $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccount"; message = "$acctName successfully created on $($DATA.assetName)"; })
+               $newacct = New-SafeguardAssetAccount -ParentAsset $DATA.asset.DisplayName -NewAccountName $acctname
+               $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccount"; message = "$acctName successfully created on $($DATA.asset.DisplayName)"; })
             } catch {
-               $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "New-SafeguardAssetAccount"; message = "Unexpected error creating $acctName on $($DATA.assetName)"; ex = $_; })
+               $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "New-SafeguardAssetAccount"; message = "Unexpected error creating $acctName on $($DATA.asset.DisplayName)"; ex = $_; })
             }
          }
       }
 
       $deleteAccountName = $DATA.assetAccounts[0] + "_delete"
-      $assetAccount = New-SafeguardAssetAccount -ParentAsset "$($DATA.assetName)" -NewAccountName "$deleteAccountName"
-      Remove-SafeguardAssetAccount -AssetToUse $DATA.assetName -AccountToDelete "$deleteAccountName" > $null
+      $assetAccount = New-SafeguardAssetAccount -ParentAsset "$($DATA.asset.DisplayName)" -NewAccountName "$deleteAccountName"
+      Remove-SafeguardAssetAccount -AssetToUse $DATA.asset.DisplayName -AccountToDelete "$deleteAccountName" > $null
       $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Remove-SafeguardAssetAccount"; message = "$($assetAccount.Name)_deleteme successfully added and removed"; })
    }
    catch {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "general"; message = "Unexpected error creating Asset Accounts on $($DATA.assetName)"; ex = $_; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "general"; message = "Unexpected error creating Asset Accounts on $($DATA.asset.DisplayName)"; ex = $_; })
    }
-   $assetAccount = Get-SafeguardAssetAccount -AccountToGet "$($DATA.assetAccounts[0])" -AssetToGet "$($DATA.assetName)"
-   $assetAccount = Edit-SafeguardAssetAccount -AssetToEdit $DATA.assetName -AccountToEdit $DATA.assetAccounts[0] -Description "Description for $($DATA.assetName)\$($DATA.assetAccounts[0])"
+   $assetAccount = Get-SafeguardAssetAccount -AccountToGet "$($DATA.assetAccounts[0])" -AssetToGet "$($DATA.asset.DisplayName)"
+   $assetAccount = Edit-SafeguardAssetAccount -AssetToEdit $DATA.asset.DisplayName -AccountToEdit $DATA.assetAccounts[0] -Description "Description for $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"
    if (-not $assetAccount.Description -contains "Description for") {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardAssetAccount"; message = "failed for $($DATA.assetName)\$($DATA.assetAccounts[0])"; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Edit-SafeguardAssetAccount"; message = "failed for $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; })
    }
 
    try {
@@ -104,21 +101,21 @@ try {
       if ($found) { $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Find-SafeguardAssetAccount"; message = "found $($DATA.assetAccounts[0])"; }) }
       else { $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardAssetAccount"; message = "DID NOT find $($DATA.assetAccounts[0])"; }) }
    } catch {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardAssetAccount"; message = "failed for $($DATA.assetName)\$($DATA.assetAccounts[0])"; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Find-SafeguardAssetAccount"; message = "failed for $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; })
    }
 
    try {
-      Test-SafeguardAsset -AssetToTest $DATA.assetName
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Test-SafeguardAsset"; message = "Successfully tested asset $($DATA.assetName) (pass or fail)"; })
+      Test-SafeguardAsset -AssetToTest $DATA.asset.DisplayName
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Test-SafeguardAsset"; message = "Successfully tested asset $($DATA.asset.DisplayName) (pass or fail)"; })
    } catch {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Test-SafeguardAsset"; message = "failed for $($DATA.assetName)"; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Test-SafeguardAsset"; message = "failed for $($DATA.asset.DisplayName)"; })
    }
 
    try {
-      $randpwd = New-SafeguardAssetAccountRandomPassword -AssetToUse $DATA.assetName -AccountToUse $DATA.assetAccounts[0]
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccountRandomPassword"; message = "Successfully created password for $($DATA.assetName)\$($DATA.assetAccounts[0]) $randpwd"; })
+      $randpwd = New-SafeguardAssetAccountRandomPassword -AssetToUse $DATA.asset.DisplayName -AccountToUse $DATA.assetAccounts[0]
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "New-SafeguardAssetAccountRandomPassword"; message = "Successfully created password for $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0]) $randpwd"; })
    } catch {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "New-SafeguardAssetAccountRandomPassword"; message = "failed for $($DATA.assetName)\$($DATA.assetAccounts[0])"; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "New-SafeguardAssetAccountRandomPassword"; message = "failed for $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; })
    }
 
    if (!$randpwd) {
@@ -126,25 +123,25 @@ try {
    } else {
       $newpassword = $randpwd | ConvertTo-SecureString -AsPlainText -Force
       try {
-         Set-SafeguardAssetAccountPassword -AssetToSet $DATA.assetName -AccountToSet $DATA.assetAccounts[0] -NewPassword $newpassword > $null
-         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Set-SafeguardAssetAccountPassword"; message = "Successfully set password on $($DATA.assetName)\$($DATA.assetAccounts[0])"; })
+         Set-SafeguardAssetAccountPassword -AssetToSet $DATA.asset.DisplayName -AccountToSet $DATA.assetAccounts[0] -NewPassword $newpassword > $null
+         $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Set-SafeguardAssetAccountPassword"; message = "Successfully set password on $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; })
       } catch {
-         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Set-SafeguardAssetAccountPassword"; message = "Set password failed on $($DATA.assetName)\$($DATA.assetAccounts[0])"; ex = $_; })
+         $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Set-SafeguardAssetAccountPassword"; message = "Set password failed on $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; ex = $_; })
       }
    }
 
    try {
-      Invoke-SafeguardAssetAccountPasswordChange -AssetToUse $DATA.assetName -AccountToUse $DATA.assetAccounts[0]
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Invoke-SafeguardAssetAccountPasswordChange"; message = "Successfully called change password on $($DATA.assetName)\$($DATA.assetAccounts[0])"; })
+      Invoke-SafeguardAssetAccountPasswordChange -AssetToUse $DATA.asset.DisplayName -AccountToUse $DATA.assetAccounts[0]
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Invoke-SafeguardAssetAccountPasswordChange"; message = "Successfully called change password on $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; })
    } catch {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Invoke-SafeguardAssetAccountPasswordChange"; message = "Failed on $($DATA.assetName)\$($DATA.assetAccounts[0])"; ex = $_; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Invoke-SafeguardAssetAccountPasswordChange"; message = "Failed on $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; ex = $_; })
    }
 
    try {
-      Test-SafeguardAssetAccountPassword -AssetToUse $DATA.assetName -AccountToUse $DATA.assetAccounts[0]
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Test-SafeguardAssetAccountPassword"; message = "Successfully called test on $($DATA.assetName)\$($DATA.assetAccounts[0])"; })
+      Test-SafeguardAssetAccountPassword -AssetToUse $DATA.asset.DisplayName -AccountToUse $DATA.assetAccounts[0]
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Test-SafeguardAssetAccountPassword"; message = "Successfully called test on $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; })
    } catch {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Test-SafeguardAssetAccountPassword"; message = "Failed on $($DATA.assetName)\$($DATA.assetAccounts[0])"; ex = $_; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Test-SafeguardAssetAccountPassword"; message = "Failed on $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; ex = $_; })
    }
 
    try {
@@ -152,16 +149,16 @@ try {
       if ($randpwd) {
          $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Set-SafeguardAssetAccountPassword"; message = "Creating some password history for Get-SafeguardPasswordHistory"; })
          $newpassword = "$randpwd 1234" | ConvertTo-SecureString -AsPlainText -Force
-         Set-SafeguardAssetAccountPassword -AssetToSet $DATA.assetName -AccountToSet $DATA.assetAccounts[0] -NewPassword $newpassword > $null
+         Set-SafeguardAssetAccountPassword -AssetToSet $DATA.asset.DisplayName -AccountToSet $DATA.assetAccounts[0] -NewPassword $newpassword > $null
          $newpassword = "$randpwd 2345" | ConvertTo-SecureString -AsPlainText -Force
-         Set-SafeguardAssetAccountPassword -AssetToSet $DATA.assetName -AccountToSet $DATA.assetAccounts[0] -NewPassword $newpassword > $null
+         Set-SafeguardAssetAccountPassword -AssetToSet $DATA.asset.DisplayName -AccountToSet $DATA.assetAccounts[0] -NewPassword $newpassword > $null
       }
 
       $results = Get-SafeguardPasswordHistory -AccountToGet $DATA.assetAccounts[0] -stdout
-      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardPasswordHistory"; message = "Successfully retrived password history on $($DATA.assetName)\$($DATA.assetAccounts[0])"; })
+      $GLOBALS.goodResult(@{ minVerbosity = 1; cmd = "Get-SafeguardPasswordHistory"; message = "Successfully retrived password history on $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; })
       $GLOBALS.formatTable(@{ output = ($results -split "`r`n"); })
    } catch {
-      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Get-SafeguardPasswordHistory"; message = "Failed on $($DATA.assetName)\$($DATA.assetAccounts[0])"; ex = $_; })
+      $GLOBALS.badResult(@{ minVerbosity = 0; cmd = "Get-SafeguardPasswordHistory"; message = "Failed on $($DATA.asset.DisplayName)\$($DATA.assetAccounts[0])"; ex = $_; })
    }
 
    try {
@@ -319,9 +316,7 @@ try {
    }
 
    # create a assets and accounts to delete, restore, and remove
-   $delResAsset = New-SafeguardAsset -DisplayName "delres_$($DATA.assetName)" -Platform $DATA.assetPlatform -NetworkAddress $DATA.assetIpAddress `
-      -ServiceAccountCredentialType Password -ServiceAccountName $DATA.assetServiceAccount -ServiceAccountPassword $DATA.assetServiceAccountPassword `
-      -AcceptSshHostKey
+   $delResAsset = $GLOBALS.createAsset($false, "delres_$($DATA.asset.DisplayName)")
    $delResAccount = New-SafeguardAssetAccount -ParentAsset $delResAsset.Name -NewAccountName "delres_account"
    Remove-SafeguardAssetAccount -AccountToDelete $delResAccount.Id > $null
    $GLOBALS.infoResult(@{ minVerbosity = 1; cmd = "Deleted Account"; message = "Successfully created and deleted account for testing Id=$($delResAccount.Id) Name=$($delResAsset.Name)\$($delResAccount.Name)"; })

@@ -34,7 +34,7 @@ try {
               $NewHelpHashes += "  {0,-55} = `'{1}`';`n" -f "'$commandName'", $cmdHash
               $GLOBALS.resultCounts.Good++
             } elseif (!$DATA.CommandHelpHashes[$commandName] -or $DATA.CommandHelpHashes[$commandName] -ne $cmdHash) {
-              $oldHash = $GLOBALS.emptyElse($DATA.CommandHelpHashes[$commandName], "missing/empty")
+              $oldHash = ifIsNullOrEmpty $DATA.CommandHelpHashes[$commandName]  "missing/empty"
               $Errors += "***hash mismatch for $commandName - stored: $oldHash, actual: $cmdHash"
               $GLOBALS.resultCounts.Bad++
             }
